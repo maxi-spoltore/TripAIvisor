@@ -1,0 +1,67 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "selectDate": "Select a date",
+    "confirmDelete": "Are you sure you want to delete?"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "continueWithGoogle": "Continue with Google"
+  },
+  "trips": {
+    "title": "My Trips",
+    "defaultTitle": "My Trip",
+    "newTrip": "New Trip",
+    "import": "Import JSON",
+    "importing": "Importing...",
+    "export": "Export JSON",
+    "setStartDate": "Set start date",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "days": "{count} days",
+    "departureFrom": "Departure from {city}",
+    "returnTo": "Return to {city}"
+  },
+  "destinations": {
+    "add": "Add Destination",
+    "edit": "Edit Destination",
+    "city": "City",
+    "duration": "Duration (days)",
+    "newCity": "New City"
+  },
+  "transport": {
+    "title": "Transport",
+    "type": "Transport type",
+    "plane": "Plane",
+    "train": "Train",
+    "bus": "Bus",
+    "leaveTime": "Leave accommodation time",
+    "terminal": "Departure terminal",
+    "company": "Company",
+    "bookingNumber": "Ticket number",
+    "bookingCode": "Booking code",
+    "departureTime": "Departure time"
+  },
+  "accommodation": {
+    "title": "Accommodation",
+    "name": "Accommodation name",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "bookingLink": "Booking link",
+    "bookingCode": "Booking code",
+    "address": "Address"
+  },
+  "share": {
+    "title": "Share Trip",
+    "open": "Share",
+    "generateLink": "Generate link",
+    "copyLink": "Copy link",
+    "copied": "Copied!",
+    "viewOnly": "View only"
+  }
+}

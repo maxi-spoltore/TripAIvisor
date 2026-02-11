@@ -1,0 +1,67 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "confirm": "Confirmar",
+    "selectDate": "Selecciona una fecha",
+    "confirmDelete": "¿Estás seguro de que deseas eliminar?"
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "continueWithGoogle": "Continuar con Google"
+  },
+  "trips": {
+    "title": "Mis Viajes",
+    "defaultTitle": "Mi Viaje",
+    "newTrip": "Nuevo Viaje",
+    "import": "Importar JSON",
+    "importing": "Importando...",
+    "export": "Exportar JSON",
+    "setStartDate": "Configurar fecha de inicio",
+    "startDate": "Fecha de Salida",
+    "endDate": "Fecha de Regreso",
+    "days": "{count} días",
+    "departureFrom": "Salida desde {city}",
+    "returnTo": "Regreso a {city}"
+  },
+  "destinations": {
+    "add": "Agregar Destino",
+    "edit": "Editar Destino",
+    "city": "Ciudad",
+    "duration": "Duración (días)",
+    "newCity": "Nueva Ciudad"
+  },
+  "transport": {
+    "title": "Transporte",
+    "type": "Tipo de transporte",
+    "plane": "Avión",
+    "train": "Tren",
+    "bus": "Bus",
+    "leaveTime": "Hora salida del alojamiento",
+    "terminal": "Terminal de origen",
+    "company": "Empresa",
+    "bookingNumber": "Número de boleto",
+    "bookingCode": "Código de reserva",
+    "departureTime": "Hora de salida"
+  },
+  "accommodation": {
+    "title": "Hospedaje",
+    "name": "Nombre del alojamiento",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "bookingLink": "Link de reserva",
+    "bookingCode": "Código de reserva",
+    "address": "Dirección"
+  },
+  "share": {
+    "title": "Compartir Viaje",
+    "open": "Compartir",
+    "generateLink": "Generar enlace",
+    "copyLink": "Copiar enlace",
+    "copied": "¡Copiado!",
+    "viewOnly": "Vista de solo lectura"
+  }
+}
