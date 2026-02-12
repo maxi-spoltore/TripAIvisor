@@ -37,7 +37,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <div data-locale={locale} className="min-h-screen">
-        <Header userName={session?.user?.name} userImage={session?.user?.image} />
+        <Header locale={locale} userName={session?.user?.name} userImage={session?.user?.image} />
         {children}
       </div>
     </NextIntlClientProvider>
