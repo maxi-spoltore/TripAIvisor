@@ -1,11 +1,13 @@
 'use client';
 
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, Share2 } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { createShareLinkAction } from '@/app/actions/shares';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 
 type ShareModalProps = {
   locale: string;
@@ -27,6 +29,21 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
       setErrorMessage(null);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isPending) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [isPending, onClose, open]);
 
   const handleGenerateLink = () => {
     setErrorMessage(null);
@@ -61,7 +78,7 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in"
       onClick={() => {
         if (!isPending) {
           onClose();
@@ -69,23 +86,40 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
       }}
     >
       <div
-        className="w-full max-w-xl rounded-lg border border-slate-200 bg-white p-6 shadow-lg"
+        className="w-full max-w-xl animate-scale-in rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4">
-          <h2 className="text-lg font-semibold">{tShare('title')}</h2>
-          <p className="mt-1 text-sm text-slate-600">{tShare('viewOnly')}</p>
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Share2 className="h-5 w-5 text-primary-500" />
+            {tShare('title')}
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">{tShare('viewOnly')}</p>
         </div>
 
         {!shareUrl ? (
           <Button className="w-full" disabled={isPending} onClick={handleGenerateLink}>
-            {isPending ? '...' : tShare('generateLink')}
+            {isPending ? (
+              <>
+                <Spinner className="mr-2" />
+                {locale === 'es' ? 'Generando...' : 'Generating...'}
+              </>
+            ) : (
+              tShare('generateLink')
+            )}
           </Button>
         ) : (
           <div className="space-y-3">
             <div className="flex gap-2">
-              <Input readOnly value={shareUrl} />
-              <Button disabled={isPending} onClick={handleCopyLink} type="button" variant="outline">
+              <Input className="bg-slate-50 font-mono text-sm" readOnly value={shareUrl} />
+              <Button
+                aria-label={tShare('copyLink')}
+                className={cn('transition-all duration-200', copied && 'border-emerald-400 bg-emerald-50 text-emerald-600')}
+                disabled={isPending}
+                onClick={handleCopyLink}
+                type="button"
+                variant="outline"
+              >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 <span className="sr-only">{tShare('copyLink')}</span>
               </Button>

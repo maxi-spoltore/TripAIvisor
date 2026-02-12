@@ -11,6 +11,8 @@
   "auth": {
     "signIn": "Iniciar sesión",
     "signOut": "Cerrar sesión",
+    "tagline": "Planifica tus viajes, a tu manera",
+    "welcomeBack": "Bienvenido de nuevo",
     "continueWithGoogle": "Continuar con Google"
   },
   "trips": {
@@ -19,6 +21,10 @@
     "newTrip": "Nuevo Viaje",
     "import": "Importar JSON",
     "importing": "Importando...",
+    "noTripsTitle": "Aún no tienes viajes",
+    "noTripsDescription": "Crea tu primer viaje para empezar",
+    "destinations": "{count} destinos",
+    "noDestinations": "Sin destinos",
     "export": "Exportar JSON",
     "setStartDate": "Configurar fecha de inicio",
     "startDate": "Fecha de Salida",
@@ -32,7 +38,8 @@
     "edit": "Editar Destino",
     "city": "Ciudad",
     "duration": "Duración (días)",
-    "newCity": "Nueva Ciudad"
+    "newCity": "Nueva Ciudad",
+    "confirmDeleteDestination": "Este destino y todos sus detalles serán eliminados permanentemente."
   },
   "transport": {
     "title": "Transporte",
@@ -62,6 +69,8 @@
     "generateLink": "Generar enlace",
     "copyLink": "Copiar enlace",
     "copied": "¡Copiado!",
-    "viewOnly": "Vista de solo lectura"
+    "viewOnly": "Vista de solo lectura",
+    "sharedTrip": "Viaje compartido",
+    "readOnlyBanner": "Estás viendo un viaje compartido (solo lectura)"
   }
 }

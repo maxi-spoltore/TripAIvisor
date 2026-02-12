@@ -5,6 +5,7 @@ import { ChangeEvent, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { importTripFromDataAction } from '@/app/actions/trips';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { validateImportData } from '@/lib/utils/import-export';
 
 type ImportTripButtonProps = {
@@ -74,7 +75,7 @@ export function ImportTripButton({ locale, label, loadingLabel }: ImportTripButt
         type="file"
       />
       <Button disabled={isPending} onClick={handleOpenFilePicker} type="button" variant="outline">
-        <Upload className="mr-2 h-4 w-4" />
+        {isPending ? <Spinner className="mr-2" /> : <Upload className="mr-2 h-4 w-4" />}
         {isPending ? loadingLabel : label}
       </Button>
       {errorMessage ? <p className="text-xs text-red-600">{errorMessage}</p> : null}

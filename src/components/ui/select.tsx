@@ -42,7 +42,7 @@ export function SelectTrigger({ className, ...props }: HTMLAttributes<HTMLButton
     <button
       type="button"
       className={cn(
-        'flex h-10 w-full items-center justify-between rounded-md border border-slate-300 bg-white px-3 py-2 text-sm',
+        'flex h-10 w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:border-primary-500',
         className
       )}
       onClick={() => context?.setOpen(!context.open)}
@@ -65,7 +65,7 @@ export function SelectContent({ className, ...props }: HTMLAttributes<HTMLDivEle
 
   return (
     <div
-      className={cn('mt-1 rounded-md border border-slate-200 bg-white p-1 shadow-md', className)}
+      className={cn('mt-1 animate-fade-in rounded-md border border-slate-200 bg-white p-1 shadow-md', className)}
       {...props}
     />
   );
@@ -81,7 +81,7 @@ export function SelectItem({ className, value, children, ...props }: SelectItemP
   return (
     <button
       type="button"
-      className={cn('flex w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-slate-100', className)}
+      className={cn('flex w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-primary-50', className)}
       onClick={() => {
         context?.onValueChange?.(value);
         context?.setOpen(false);

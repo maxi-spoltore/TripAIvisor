@@ -11,6 +11,8 @@
   "auth": {
     "signIn": "Sign in",
     "signOut": "Sign out",
+    "tagline": "Plan your trips, your way",
+    "welcomeBack": "Welcome back",
     "continueWithGoogle": "Continue with Google"
   },
   "trips": {
@@ -19,6 +21,10 @@
     "newTrip": "New Trip",
     "import": "Import JSON",
     "importing": "Importing...",
+    "noTripsTitle": "No trips yet",
+    "noTripsDescription": "Create your first trip to get started",
+    "destinations": "{count} destinations",
+    "noDestinations": "No destinations",
     "export": "Export JSON",
     "setStartDate": "Set start date",
     "startDate": "Start Date",
@@ -32,7 +38,8 @@
     "edit": "Edit Destination",
     "city": "City",
     "duration": "Duration (days)",
-    "newCity": "New City"
+    "newCity": "New City",
+    "confirmDeleteDestination": "This destination and all its details will be permanently deleted."
   },
   "transport": {
     "title": "Transport",
@@ -62,6 +69,8 @@
     "generateLink": "Generate link",
     "copyLink": "Copy link",
     "copied": "Copied!",
-    "viewOnly": "View only"
+    "viewOnly": "View only",
+    "sharedTrip": "Shared Trip",
+    "readOnlyBanner": "You are viewing a shared trip (read-only)"
   }
 }

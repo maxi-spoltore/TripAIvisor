@@ -1,6 +1,8 @@
 'use client';
 
 import { DragEvent, FormEvent, useEffect, useState, useTransition } from 'react';
+import { Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   createDestinationAction,
   deleteDestinationAction,
@@ -8,7 +10,17 @@ import {
   saveDestinationDetailsAction
 } from '@/app/actions/destinations';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 import type { DestinationWithRelations } from '@/types/database';
 import { DestinationCard } from './destination-card';
 import { DestinationModal, type DestinationModalSubmitInput } from './destination-modal';
@@ -32,11 +44,14 @@ function withNormalizedPositions(destinations: DestinationWithRelations[]): Dest
 }
 
 export function DestinationList({ locale, tripId, destinations, startDate }: DestinationListProps) {
+  const tCommon = useTranslations('common');
+  const tDestinations = useTranslations('destinations');
   const [items, setItems] = useState<DestinationWithRelations[]>(() => sortByPosition(destinations));
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [editingDestinationId, setEditingDestinationId] = useState<number | null>(null);
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const [newCity, setNewCity] = useState('');
   const [newDuration, setNewDuration] = useState('2');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -147,13 +162,6 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
   };
 
   const handleDeleteDestination = (destinationId: number) => {
-    const confirmed = window.confirm(
-      locale === 'es' ? '¿Estás seguro de que deseas eliminar?' : 'Are you sure you want to delete?'
-    );
-    if (!confirmed) {
-      return;
-    }
-
     const previousItems = items;
     setErrorMessage(null);
     setItems((currentItems) =>
@@ -181,6 +189,21 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
         setErrorMessage(locale === 'es' ? 'No se pudo eliminar el destino.' : 'Could not delete destination.');
       }
     });
+  };
+
+  const handleRequestDeleteDestination = (destinationId: number) => {
+    setOpenMenuId(null);
+    setPendingDeleteId(destinationId);
+  };
+
+  const handleConfirmDeleteDestination = () => {
+    if (pendingDeleteId === null) {
+      return;
+    }
+
+    const destinationId = pendingDeleteId;
+    setPendingDeleteId(null);
+    handleDeleteDestination(destinationId);
   };
 
   const handleToggleCard = (destinationId: number) => {
@@ -230,39 +253,64 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
   const editingDestination =
     editingDestinationId === null ? null : items.find((item) => item.destination_id === editingDestinationId) ?? null;
 
-  return (
-    <section className="space-y-4">
-      <form
-        className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-[2fr_1fr_auto]"
-        onSubmit={handleAddDestination}
+  const addDestinationForm = (showTimelineNode: boolean) => (
+    <form className="relative flex gap-4" onSubmit={handleAddDestination}>
+      {showTimelineNode ? (
+        <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-dashed border-slate-300 bg-white text-slate-400">
+          <Plus className="h-4 w-4" />
+        </div>
+      ) : null}
+
+      <div
+        className={cn(
+          'flex flex-1 gap-3 rounded-xl border border-dashed border-slate-300 bg-white p-4 transition-colors focus-within:border-primary-400 focus-within:bg-primary-50/30',
+          showTimelineNode ? '' : 'ml-0'
+        )}
       >
         <Input
           disabled={isPending}
           onChange={(event) => setNewCity(event.target.value)}
           placeholder={locale === 'es' ? 'Nueva Ciudad' : 'New City'}
           value={newCity}
+          className="flex-[2]"
         />
         <Input
           disabled={isPending}
           min={1}
           onChange={(event) => setNewDuration(event.target.value)}
-          placeholder={locale === 'es' ? 'Duración (días)' : 'Duration (days)'}
+          placeholder={locale === 'es' ? 'Días' : 'Days'}
           type="number"
           value={newDuration}
+          className="flex-1"
         />
         <Button disabled={isPending} type="submit">
-          {locale === 'es' ? 'Agregar Destino' : 'Add Destination'}
+          {isPending ? (
+            <>
+              <Spinner className="mr-2" />
+              {locale === 'es' ? 'Agregando...' : 'Adding...'}
+            </>
+          ) : (
+            locale === 'es' ? 'Agregar' : 'Add'
+          )}
         </Button>
-      </form>
+      </div>
+    </form>
+  );
 
+  return (
+    <section className="space-y-4">
       {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
 
       {items.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
-          {locale === 'es' ? 'No hay destinos todavía.' : 'No destinations yet.'}
-        </p>
+        <>
+          <p className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
+            {locale === 'es' ? 'No hay destinos todavía.' : 'No destinations yet.'}
+          </p>
+          {addDestinationForm(false)}
+        </>
       ) : (
-        <div className="space-y-4">
+        <div className="relative space-y-0">
+          <div className="absolute left-5 top-6 bottom-6 w-0.5 bg-slate-200" />
           {items.map((destination, index) => (
             <div
               key={destination.destination_id}
@@ -270,23 +318,29 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
               onDragOver={handleDragOver}
               onDragStart={(event) => handleDragStart(event, index)}
               onDrop={(event) => handleDrop(event, index)}
+              className={cn('relative flex gap-4 pb-4', draggedIndex === index ? 'opacity-60' : null)}
             >
-              <DestinationCard
-                destination={destination}
-                destinations={items}
-                expanded={Boolean(expandedCards[destination.destination_id])}
-                index={index}
-                isDragging={draggedIndex === index}
-                locale={locale}
-                onDelete={() => handleDeleteDestination(destination.destination_id)}
-                onEdit={() => handleOpenModal(destination.destination_id)}
-                onToggle={() => handleToggleCard(destination.destination_id)}
-                openMenuId={openMenuId}
-                setOpenMenuId={setOpenMenuId}
-                startDate={startDate}
-              />
+              <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-primary-300 bg-white text-sm font-bold text-primary-700">
+                {index + 1}
+              </div>
+              <div className="flex-1">
+                <DestinationCard
+                  destination={destination}
+                  destinations={items}
+                  expanded={Boolean(expandedCards[destination.destination_id])}
+                  index={index}
+                  locale={locale}
+                  onDelete={() => handleRequestDeleteDestination(destination.destination_id)}
+                  onEdit={() => handleOpenModal(destination.destination_id)}
+                  onToggle={() => handleToggleCard(destination.destination_id)}
+                  openMenuId={openMenuId}
+                  setOpenMenuId={setOpenMenuId}
+                  startDate={startDate}
+                />
+              </div>
             </div>
           ))}
+          {addDestinationForm(true)}
         </div>
       )}
 
@@ -298,6 +352,30 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
         onSave={handleSaveDestinationDetails}
         open={editingDestination !== null}
       />
+
+      <Dialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDeleteId(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{tCommon('delete')}</DialogTitle>
+            <DialogDescription>{tDestinations('confirmDeleteDestination')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDeleteId(null)}>
+              {tCommon('cancel')}
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDeleteDestination}>
+              {tCommon('delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

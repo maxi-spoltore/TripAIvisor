@@ -1,9 +1,8 @@
+import { PlaneLanding, PlaneTakeoff } from 'lucide-react';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 import { DestinationList } from '@/components/trips/destination-list';
 import { TripHeader } from '@/components/trips/trip-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { auth } from '@/lib/auth';
 import { getTripById } from '@/lib/db/queries/trips';
 import { exportTrip } from '@/lib/utils/import-export';
@@ -52,7 +51,6 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
     notFound();
   }
 
-  const tTrips = await getTranslations({ locale, namespace: 'trips' });
   const totalDays = trip.destinations.reduce((acc, destination) => acc + destination.duration, 0);
   const exportedTrip = exportTrip(trip);
 
@@ -67,19 +65,19 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
         tripId={trip.trip_id}
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{tTrips('title')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-slate-600">
-          <p>
-            {tTrips('departureFrom', { city: trip.departure_city })}
-          </p>
-          <p>
-            {tTrips('returnTo', { city: trip.return_city ?? trip.departure_city })}
-          </p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-gradient-to-r from-primary-50/50 to-white p-5">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <PlaneTakeoff className="h-4 w-4 text-primary-500" />
+          <span>{trip.departure_city}</span>
+        </div>
+
+        <div className="flex-1 border-t border-dashed border-primary-300" />
+
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <span>{trip.return_city ?? trip.departure_city}</span>
+          <PlaneLanding className="h-4 w-4 text-primary-500" />
+        </div>
+      </div>
 
       <DestinationList destinations={trip.destinations} locale={locale} startDate={trip.start_date} tripId={trip.trip_id} />
     </main>

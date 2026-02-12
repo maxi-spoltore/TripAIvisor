@@ -19,9 +19,10 @@ export default async function NewTripPage({ params }: NewTripPageProps) {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-8">
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-primary-400 to-primary-600" />
         <CardHeader>
-          <CardTitle>{tTrips('newTrip')}</CardTitle>
+          <CardTitle className="text-xl">{tTrips('newTrip')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={createTripAction} className="flex flex-col gap-4">
@@ -29,7 +30,7 @@ export default async function NewTripPage({ params }: NewTripPageProps) {
             <div className="flex items-center gap-2">
               <Button type="submit">{tCommon('save')}</Button>
               <Link
-                className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
                 href={`/${locale}`}
               >
                 {tCommon('cancel')}

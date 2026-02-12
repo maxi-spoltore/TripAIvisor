@@ -1,12 +1,12 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { MapPin } from 'lucide-react';
 import { CreateTripButton } from '@/components/trips/create-trip-button';
 import { ImportTripButton } from '@/components/trips/import-trip-button';
 import { TripCard } from '@/components/trips/trip-card';
-import { Card, CardContent } from '@/components/ui/card';
 import { auth } from '@/lib/auth';
-import { getUserTrips } from '@/lib/db/queries/trips';
+import { getTripDestinationStats, getUserTrips } from '@/lib/db/queries/trips';
 
 type DashboardPageProps = {
   params: {
@@ -43,6 +43,7 @@ export default async function LocaleDashboardPage({ params }: DashboardPageProps
   }
 
   const trips = await getUserTrips(userId);
+  const tripStats = await getTripDestinationStats(trips.map((trip) => trip.trip_id));
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-8">
@@ -55,22 +56,33 @@ export default async function LocaleDashboardPage({ params }: DashboardPageProps
       </div>
 
       {trips.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-sm text-slate-600">
-            {locale === 'es' ? 'No tienes viajes todavía.' : 'You do not have trips yet.'}
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-50">
+            <MapPin className="h-8 w-8 text-primary-400" />
+          </div>
+          <div>
+            <p className="text-lg font-semibold text-slate-900">{tTrips('noTripsTitle')}</p>
+            <p className="mt-1 text-sm text-slate-500">{tTrips('noTripsDescription')}</p>
+          </div>
+          <CreateTripButton href={`/${locale}/trips/new`} label={tTrips('newTrip')} />
+        </div>
       ) : (
-        <div className="grid gap-4">
-          {trips.map((trip) => (
-            <TripCard
-              key={trip.trip_id}
-              editLabel={tCommon('edit')}
-              locale={locale}
-              selectDateLabel={tCommon('selectDate')}
-              trip={trip}
-            />
-          ))}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {trips.map((trip) => {
+            const stats = tripStats[trip.trip_id] ?? { destinationCount: 0, totalDays: 0 };
+
+            return (
+              <TripCard
+                key={trip.trip_id}
+                destinationCount={stats.destinationCount}
+                editLabel={tCommon('edit')}
+                locale={locale}
+                selectDateLabel={tCommon('selectDate')}
+                totalDays={stats.totalDays}
+                trip={trip}
+              />
+            );
+          })}
         </div>
       )}
     </main>

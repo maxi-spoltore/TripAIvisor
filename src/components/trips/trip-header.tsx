@@ -100,38 +100,44 @@ export function TripHeader({ locale, tripId, title, startDate, totalDays, export
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-      <Input
-        className="h-auto border-transparent px-0 text-3xl font-bold leading-tight shadow-none focus-visible:ring-0"
-        disabled={isPending}
-        onBlur={saveTitle}
-        onChange={(event) => setEditingTitle(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') {
-            event.currentTarget.blur();
-          }
-        }}
-        placeholder={tTrips('defaultTitle')}
-        value={editingTitle}
-      />
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="h-1 bg-gradient-to-r from-primary-400 to-primary-600" />
+      <div className="p-6">
+        <div className="group relative">
+          <Input
+            className="h-auto border-transparent px-0 text-3xl font-bold leading-tight shadow-none focus-visible:ring-0 focus-visible:border-primary-300"
+            disabled={isPending}
+            onBlur={saveTitle}
+            onChange={(event) => setEditingTitle(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.currentTarget.blur();
+              }
+            }}
+            placeholder={tTrips('defaultTitle')}
+            value={editingTitle}
+          />
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-200 opacity-0 transition-opacity group-hover:opacity-100" />
+        </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        {formattedDateRange ? (
-          <p className="flex items-center gap-2 text-sm text-slate-600">
-            <Calendar className="h-4 w-4" />
-            {formattedDateRange}
-          </p>
-        ) : null}
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          {formattedDateRange ? (
+            <span className="inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-700">
+              <Calendar className="h-3.5 w-3.5" />
+              {formattedDateRange}
+            </span>
+          ) : null}
 
-        <div className={`flex gap-2 ${formattedDateRange ? 'ml-auto' : ''}`}>
-          <Button onClick={handleExportTrip} type="button" variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            {tTrips('export')}
-          </Button>
-          <Button onClick={() => setIsShareModalOpen(true)} type="button" variant="outline">
-            <Share2 className="mr-2 h-4 w-4" />
-            {tShare('open')}
-          </Button>
+          <div className={`flex gap-2 ${formattedDateRange ? 'ml-auto' : ''}`}>
+            <Button onClick={handleExportTrip} type="button" variant="outline" size="sm">
+              <Download className="mr-2 h-4 w-4" />
+              {tTrips('export')}
+            </Button>
+            <Button onClick={() => setIsShareModalOpen(true)} type="button" variant="outline" size="sm">
+              <Share2 className="mr-2 h-4 w-4" />
+              {tShare('open')}
+            </Button>
+          </div>
         </div>
       </div>
 

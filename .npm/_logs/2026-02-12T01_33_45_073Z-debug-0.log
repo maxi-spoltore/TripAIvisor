@@ -1,0 +1,18 @@
+0 verbose cli /opt/homebrew/Cellar/node/23.7.0/bin/node /opt/homebrew/bin/npm
+1 info using npm@10.9.2
+2 info using node@v23.7.0
+3 silly config load:file:/opt/homebrew/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/maximilianospoltore/SideProjects/TripAIvisor/.npmrc
+5 silly config load:file:/opt/homebrew/etc/npmrc
+6 verbose title npm run build
+7 verbose argv "run" "build"
+8 verbose logfile logs-max:10 dir:/Users/maximilianospoltore/SideProjects/TripAIvisor/.npm/_logs/2026-02-12T01_33_45_073Z-
+9 verbose logfile /Users/maximilianospoltore/SideProjects/TripAIvisor/.npm/_logs/2026-02-12T01_33_45_073Z-debug-0.log
+10 silly logfile done cleaning log files
+11 http fetch GET https://registry.npmjs.org/npm attempt 1 failed with ENOTFOUND
+12 verbose cwd /Users/maximilianospoltore/SideProjects/TripAIvisor
+13 verbose os Darwin 25.2.0
+14 verbose node v23.7.0
+15 verbose npm  v10.9.2
+16 verbose exit 1
+17 verbose code 1

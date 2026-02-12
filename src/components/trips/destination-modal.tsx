@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Bus, ChevronDown, ChevronUp, Hotel, Plane, StickyNote, Train } from 'lucide-react';
+import { Bus, ChevronDown, ChevronUp, Hotel, Plane, StickyNote, Train, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 import type { DestinationWithRelations, TransportType } from '@/types/database';
 
 type DestinationModalProps = {
@@ -107,10 +109,6 @@ function hasAccommodationContent(destination: DestinationWithRelations | null): 
   );
 }
 
-function getModalTitle(locale: string): string {
-  return locale === 'es' ? 'Editar Destino' : 'Edit Destination';
-}
-
 function getTransportLabel(locale: string, value: TransportType): string {
   if (locale === 'es') {
     if (value === 'train') {
@@ -197,6 +195,21 @@ export function DestinationModal({
     setErrorMessage(null);
   }, [destination, open]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isPending) {
+        onCancel();
+      }
+    };
+
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [open, isPending, onCancel]);
+
   const strings = useMemo(
     () => ({
       cityLabel: locale === 'es' ? 'Ciudad *' : 'City *',
@@ -228,6 +241,7 @@ export function DestinationModal({
       budgetLabel: locale === 'es' ? 'Presupuesto estimado' : 'Estimated budget',
       budgetPlaceholder: '0',
       save: locale === 'es' ? 'Guardar' : 'Save',
+      saving: locale === 'es' ? 'Guardando...' : 'Saving...',
       cancel: locale === 'es' ? 'Cancelar' : 'Cancel',
       cityRequired: locale === 'es' ? 'El nombre de la ciudad es obligatorio.' : 'City name is required.',
       durationInvalid:
@@ -293,7 +307,7 @@ export function DestinationModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in"
       onClick={() => {
         if (!isPending) {
           onCancel();
@@ -301,11 +315,26 @@ export function DestinationModal({
       }}
     >
       <div
-        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-scale-in sm:max-h-[85vh] max-sm:h-screen max-sm:max-h-screen max-sm:rounded-none"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="border-b border-slate-200 p-6">
-          <h2 className="text-2xl font-bold">{getModalTitle(locale)}</h2>
+        <div className="flex items-center justify-between border-b border-slate-200 p-6">
+          <h2 className="text-xl font-bold">
+            {locale === 'es' ? 'Editar' : 'Edit'} —{' '}
+            {formState.city || (locale === 'es' ? 'Destino' : 'Destination')}
+          </h2>
+          <button
+            type="button"
+            className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            onClick={() => {
+              if (!isPending) {
+                onCancel();
+              }
+            }}
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
@@ -349,22 +378,31 @@ export function DestinationModal({
             </div>
           </div>
 
-          <div className="space-y-4 rounded-md border border-slate-200 p-4">
-            <Button
-              className="h-auto w-full justify-between px-0 text-left"
+          <div
+            className={cn(
+              'rounded-xl border p-4 transition-colors',
+              showTransport ? 'border-primary-200 bg-primary-50/30' : 'border-slate-200'
+            )}
+          >
+            <button
+              className="flex w-full items-center justify-between text-left disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isPending}
               onClick={() => setShowTransport((previous) => !previous)}
-              variant="ghost"
+              type="button"
             >
-              <span className="flex items-center gap-2 font-semibold">
-                <TransportIcon className="h-4 w-4" />
+              <span className="flex items-center gap-2 font-semibold text-slate-900">
+                <TransportIcon className="h-4 w-4 text-primary-500" />
                 {strings.transportTitle}
               </span>
-              {showTransport ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-            </Button>
+              {showTransport ? (
+                <ChevronUp className="h-4 w-4 text-slate-400" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-slate-400" />
+              )}
+            </button>
 
             {showTransport ? (
-              <div className="space-y-4 pt-2">
+              <div className="mt-4 space-y-4">
                 <div className="space-y-1">
                   <Label>{strings.transportTypeLabel}</Label>
                   <Select
@@ -521,22 +559,31 @@ export function DestinationModal({
             ) : null}
           </div>
 
-          <div className="space-y-4 rounded-md border border-slate-200 p-4">
-            <Button
-              className="h-auto w-full justify-between px-0 text-left"
+          <div
+            className={cn(
+              'rounded-xl border p-4 transition-colors',
+              showAccommodation ? 'border-amber-200 bg-amber-50/30' : 'border-slate-200'
+            )}
+          >
+            <button
+              className="flex w-full items-center justify-between text-left disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isPending}
               onClick={() => setShowAccommodation((previous) => !previous)}
-              variant="ghost"
+              type="button"
             >
-              <span className="flex items-center gap-2 font-semibold">
-                <Hotel className="h-4 w-4" />
+              <span className="flex items-center gap-2 font-semibold text-slate-900">
+                <Hotel className="h-4 w-4 text-amber-500" />
                 {strings.accommodationTitle}
               </span>
-              {showAccommodation ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-            </Button>
+              {showAccommodation ? (
+                <ChevronUp className="h-4 w-4 text-slate-400" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-slate-400" />
+              )}
+            </button>
 
             {showAccommodation ? (
-              <div className="space-y-4 pt-2">
+              <div className="mt-4 space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1">
                     <Label>{strings.checkInLabel}</Label>
@@ -668,22 +715,31 @@ export function DestinationModal({
             ) : null}
           </div>
 
-          <div className="space-y-4 rounded-md border border-slate-200 p-4">
-            <Button
-              className="h-auto w-full justify-between px-0 text-left"
+          <div
+            className={cn(
+              'rounded-xl border p-4 transition-colors',
+              showAdditional ? 'border-slate-200 bg-slate-50' : 'border-slate-200'
+            )}
+          >
+            <button
+              className="flex w-full items-center justify-between text-left disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isPending}
               onClick={() => setShowAdditional((previous) => !previous)}
-              variant="ghost"
+              type="button"
             >
-              <span className="flex items-center gap-2 font-semibold">
-                <StickyNote className="h-4 w-4" />
+              <span className="flex items-center gap-2 font-semibold text-slate-900">
+                <StickyNote className="h-4 w-4 text-slate-500" />
                 {strings.additionalTitle}
               </span>
-              {showAdditional ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-            </Button>
+              {showAdditional ? (
+                <ChevronUp className="h-4 w-4 text-slate-400" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-slate-400" />
+              )}
+            </button>
 
             {showAdditional ? (
-              <div className="space-y-4 pt-2">
+              <div className="mt-4 space-y-4">
                 <div className="space-y-1">
                   <Label>{strings.notesLabel}</Label>
                   <Textarea
@@ -729,9 +785,16 @@ export function DestinationModal({
           {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
         </div>
 
-        <div className="flex gap-3 border-t border-slate-200 p-4">
+        <div className="sticky bottom-0 flex gap-3 border-t border-slate-200 bg-white p-4">
           <Button className="flex-1" disabled={isPending} onClick={handleSubmit}>
-            {strings.save}
+            {isPending ? (
+              <>
+                <Spinner className="mr-2" />
+                {strings.saving}
+              </>
+            ) : (
+              strings.save
+            )}
           </Button>
           <Button className="flex-1" disabled={isPending} onClick={onCancel} variant="outline">
             {strings.cancel}

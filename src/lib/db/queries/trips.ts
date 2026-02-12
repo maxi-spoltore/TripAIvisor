@@ -29,6 +29,44 @@ export async function getUserTrips(userId: number): Promise<Trip[]> {
   return (data ?? []) as Trip[];
 }
 
+type TripDestinationStats = {
+  destinationCount: number;
+  totalDays: number;
+};
+
+export async function getTripDestinationStats(tripIds: number[]): Promise<Record<number, TripDestinationStats>> {
+  const stats: Record<number, TripDestinationStats> = {};
+
+  if (tripIds.length === 0) {
+    return stats;
+  }
+
+  for (const tripId of tripIds) {
+    stats[tripId] = { destinationCount: 0, totalDays: 0 };
+  }
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from('destinations')
+    .select('trip_id, duration')
+    .in('trip_id', tripIds);
+
+  if (error) {
+    throw error;
+  }
+
+  const destinations = (data ?? []) as Pick<Destination, 'trip_id' | 'duration'>[];
+
+  for (const destination of destinations) {
+    const tripStats = stats[destination.trip_id] ?? { destinationCount: 0, totalDays: 0 };
+    tripStats.destinationCount += 1;
+    tripStats.totalDays += destination.duration || 0;
+    stats[destination.trip_id] = tripStats;
+  }
+
+  return stats;
+}
+
 export async function getTripById(tripId: number): Promise<TripWithRelations | null> {
   const supabase = createAdminClient();
 
