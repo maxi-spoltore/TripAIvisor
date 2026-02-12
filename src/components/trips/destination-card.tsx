@@ -231,7 +231,7 @@ export function DestinationCard({
     destination.budget !== null;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
       <div className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">

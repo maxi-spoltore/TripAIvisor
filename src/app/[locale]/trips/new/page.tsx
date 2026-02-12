@@ -31,7 +31,7 @@ export default async function NewTripPage({ params }: NewTripPageProps) {
               <Button type="submit">{tCommon('save')}</Button>
               <Link
                 className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
-                href={`/${locale}`}
+                href={`/${locale}/trips`}
               >
                 {tCommon('cancel')}
               </Link>

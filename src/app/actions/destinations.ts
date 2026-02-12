@@ -91,6 +91,7 @@ async function requireUserId(locale: string): Promise<number> {
 
 function revalidateTripPaths(locale: string, tripId: number): void {
   revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/trips`);
   revalidatePath(`/${locale}/trips/${tripId}`);
 }
 

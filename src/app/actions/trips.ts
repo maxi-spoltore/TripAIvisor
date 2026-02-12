@@ -118,6 +118,7 @@ export async function createTripForLocaleAction(locale: string, formData: FormDa
   const trip = await createTrip(userId, title);
 
   revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/trips`);
   return trip.trip_id;
 }
 
@@ -137,6 +138,7 @@ export async function deleteTripForLocaleAction(locale: string, formData: FormDa
   await deleteTrip(tripId);
 
   revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/trips`);
 }
 
 export async function updateTripTitleAction(input: { locale: string; tripId: number; title: string }): Promise<void> {
@@ -153,6 +155,7 @@ export async function updateTripTitleAction(input: { locale: string; tripId: num
   });
 
   revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/trips`);
   revalidatePath(`/${locale}/trips/${tripId}`);
 }
 
@@ -266,6 +269,7 @@ export async function importTripFromDataAction(input: {
   }
 
   revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/trips`);
   revalidatePath(`/${locale}/trips/${trip.trip_id}`);
 
   return trip.trip_id;
