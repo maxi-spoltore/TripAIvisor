@@ -11,6 +11,9 @@
   "auth": {
     "signIn": "Sign in",
     "signOut": "Sign out",
+    "settings": "Settings",
+    "comingSoon": "Coming soon",
+    "language": "Language",
     "tagline": "Plan your trips, your way",
     "welcomeBack": "Welcome back",
     "continueWithGoogle": "Continue with Google"
@@ -35,7 +38,8 @@
     "endDate": "End Date",
     "days": "{count} days",
     "departureFrom": "Departure from {city}",
-    "returnTo": "Return to {city}"
+    "returnTo": "Return to {city}",
+    "backToTrips": "Back to trips"
   },
   "destinations": {
     "add": "Add Destination",

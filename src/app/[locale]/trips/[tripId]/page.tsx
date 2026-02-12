@@ -1,5 +1,7 @@
-import { PlaneLanding, PlaneTakeoff } from 'lucide-react';
+import { ArrowLeft, PlaneLanding, PlaneTakeoff } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
+import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { DestinationList } from '@/components/trips/destination-list';
 import { TripHeader } from '@/components/trips/trip-header';
@@ -51,11 +53,20 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
     notFound();
   }
 
+  const tTrips = await getTranslations({ locale, namespace: 'trips' });
   const totalDays = trip.destinations.reduce((acc, destination) => acc + destination.duration, 0);
   const exportedTrip = exportTrip(trip);
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-8">
+      <Link
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+        href={`/${locale}/trips`}
+      >
+        <ArrowLeft className="h-4 w-4" />
+        {tTrips('backToTrips')}
+      </Link>
+
       <TripHeader
         exportData={exportedTrip}
         locale={locale}

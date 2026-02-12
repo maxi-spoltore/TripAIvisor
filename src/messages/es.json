@@ -11,6 +11,9 @@
   "auth": {
     "signIn": "Iniciar sesión",
     "signOut": "Cerrar sesión",
+    "settings": "Configuración",
+    "comingSoon": "Próximamente",
+    "language": "Idioma",
     "tagline": "Planifica tus viajes, a tu manera",
     "welcomeBack": "Bienvenido de nuevo",
     "continueWithGoogle": "Continuar con Google"
@@ -35,7 +38,8 @@
     "endDate": "Fecha de Regreso",
     "days": "{count} días",
     "departureFrom": "Salida desde {city}",
-    "returnTo": "Regreso a {city}"
+    "returnTo": "Regreso a {city}",
+    "backToTrips": "Volver a viajes"
   },
   "destinations": {
     "add": "Agregar Destino",

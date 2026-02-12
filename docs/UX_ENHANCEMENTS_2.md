@@ -260,7 +260,9 @@ type UserMenuProps = {
 ┌─────────────────────┐
 │  User Name           │  ← non-interactive, text-sm font-medium
 ├─────────────────────┤
-│  🌐 ES | EN         │  ← language toggle (inline buttons like current LocaleSwitcher)
+│  🌐 English         │  ← full-width menu item
+│  🌐 Español         │  ← full-width menu item
+│  ✓ Active locale    │  ← check icon shown on selected language
 │  ⚙️ Settings        │  ← disabled, text-slate-400, cursor-not-allowed
 ├─────────────────────┤
 │  🚪 Sign out        │  ← red on hover
@@ -284,6 +286,10 @@ type UserMenuProps = {
 ```tsx
 className="absolute right-0 top-full z-50 mt-2 min-w-[200px] animate-fade-in rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
 ```
+
+**Avatar alignment adjustment:**
+- Keep the avatar trigger at a fixed `h-8 w-8` with centered flex content and `leading-none`.
+- Render avatar image as `display: block` to avoid baseline/inline offset.
 
 **Modify: `src/components/layout/header.tsx`**
 - Import `UserMenu` from `./user-menu`.
@@ -311,12 +317,39 @@ className="absolute right-0 top-full z-50 mt-2 min-w-[200px] animate-fade-in rou
 ```
 
 ### Acceptance Criteria
-- [ ] Clicking user avatar opens a dropdown menu.
-- [ ] Dropdown shows user name, language toggle (ES/EN), disabled Settings with "Coming soon", and Sign out.
-- [ ] Language toggle switches the locale (URL updates, page re-renders in new language).
-- [ ] Sign out clears session and redirects to login page.
-- [ ] Clicking outside the dropdown closes it.
-- [ ] LocaleSwitcher is no longer rendered separately in the header.
+- [x] Clicking user avatar opens a dropdown menu.
+- [x] Dropdown shows user name, language toggle (ES/EN), disabled Settings with "Coming soon", and Sign out.
+- [x] Language toggle switches the locale (URL updates, page re-renders in new language).
+- [x] Sign out clears session and redirects to login page.
+- [x] Clicking outside the dropdown closes it.
+- [x] LocaleSwitcher is no longer rendered separately in the header.
+
+### Task 4 Implementation Summary (Completed)
+
+- Added `src/components/layout/user-menu.tsx` as a client component and moved user avatar behavior into a dropdown menu:
+  - avatar button toggles menu open/closed
+  - click-outside listener closes the menu when clicking outside the menu container
+  - avatar rendering preserves existing image/initials behavior from the header
+- Implemented dropdown content and actions:
+  - user name display row
+  - language selector rendered as full-width `English` / `Español` menu items with active checkmark
+  - locale switching still uses the same `replaceLocale` path-rewrite logic previously used by `LocaleSwitcher`
+  - disabled settings row with translated "Coming soon" suffix
+  - sign-out action using `signOut()` followed by hard navigation to `/${locale}/login`
+- Updated `src/components/layout/header.tsx`:
+  - removed `LocaleSwitcher` import/usage
+  - removed avatar/initials rendering logic from header
+  - rendered `<UserMenu locale={locale} userName={userName} userImage={userImage} />` instead
+- Follow-up UX refinements applied after initial Task 4 implementation:
+  - centered avatar badge vertically by setting fixed-size trigger button layout (`h-8 w-8`, centered flex, `leading-none`)
+  - removed explicit `setOpen(false)` on locale click; menu is no longer intentionally closed by the click handler
+  - note: locale navigation can still remount UI state depending on route transition, so menu persistence across locale change is not guaranteed
+- Added new auth translation keys for Task 4:
+  - `src/messages/en.json`: `settings`, `comingSoon`, `language`
+  - `src/messages/es.json`: `settings`, `comingSoon`, `language`
+- Verification completed:
+  - `npm run lint` passed (warning: `@next/next/no-img-element` in `src/components/layout/user-menu.tsx`)
+  - `npm run build` passed successfully
 
 ---
 
@@ -358,9 +391,28 @@ const tTrips = await getTranslations({ locale, namespace: 'trips' });
 ```
 
 ### Acceptance Criteria
-- [ ] Trip edit page shows "Back to trips" link with arrow icon at the top.
-- [ ] Clicking the link navigates to `/{locale}/trips`.
-- [ ] Text is localized in both ES and EN.
+- [x] Trip edit page shows "Back to trips" link with arrow icon at the top.
+- [x] Clicking the link navigates to `/{locale}/trips`.
+- [x] Text is localized in both ES and EN.
+
+### Task 5 Implementation Summary (Completed)
+
+- Updated `src/app/[locale]/trips/[tripId]/page.tsx`:
+  - imported `ArrowLeft` from `lucide-react`
+  - imported `Link` from `next/link`
+  - imported `getTranslations` from `next-intl/server`
+  - initialized `tTrips` with `getTranslations({ locale, namespace: 'trips' })`
+  - added a localized back link as the first element inside `<main>` that routes to `/${locale}/trips`
+- Updated trip translation dictionaries:
+  - `src/messages/en.json`: added `trips.backToTrips = "Back to trips"`
+  - `src/messages/es.json`: added `trips.backToTrips = "Volver a viajes"`
+- Behavior achieved:
+  - trip detail/editor page now includes a visible back affordance with arrow icon
+  - navigation target is the localized trips index route
+  - link label is localized for both English and Spanish
+- Verification completed:
+  - `npm run lint` passed (existing warning persists: `@next/next/no-img-element` in `src/components/layout/user-menu.tsx`)
+  - `npm run build` passed successfully
 
 ---
 
