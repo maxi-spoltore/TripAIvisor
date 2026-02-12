@@ -1,9 +1,10 @@
-import { ArrowLeft, PlaneLanding, PlaneTakeoff } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { DestinationList } from '@/components/trips/destination-list';
+import { TripCityBanner } from '@/components/trips/trip-city-banner';
 import { TripHeader } from '@/components/trips/trip-header';
 import { auth } from '@/lib/auth';
 import { getTripById } from '@/lib/db/queries/trips';
@@ -76,19 +77,12 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
         tripId={trip.trip_id}
       />
 
-      <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-gradient-to-r from-primary-50/50 to-white p-5">
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-          <PlaneTakeoff className="h-4 w-4 text-primary-500" />
-          <span>{trip.departure_city}</span>
-        </div>
-
-        <div className="flex-1 border-t border-dashed border-primary-300" />
-
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-          <span>{trip.return_city ?? trip.departure_city}</span>
-          <PlaneLanding className="h-4 w-4 text-primary-500" />
-        </div>
-      </div>
+      <TripCityBanner
+        departureCity={trip.departure_city}
+        locale={locale}
+        returnCity={trip.return_city}
+        tripId={trip.trip_id}
+      />
 
       <DestinationList destinations={trip.destinations} locale={locale} startDate={trip.start_date} tripId={trip.trip_id} />
     </main>

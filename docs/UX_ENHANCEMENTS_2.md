@@ -510,12 +510,44 @@ import { Label } from '@/components/ui/label';
 ```
 
 ### Acceptance Criteria
-- [ ] New trip creation form has departure and return city inputs with labels.
-- [ ] If departure city is left blank, defaults to "Buenos Aires".
-- [ ] If return city is left blank, it's stored as null (displays same as departure city).
-- [ ] On trip edit page, clicking a city name makes it editable inline.
-- [ ] Changes save on blur/Enter, cancel on Escape.
-- [ ] Existing trips with "Buenos Aires" hardcoded still display correctly.
+- [x] New trip creation form has departure and return city inputs with labels.
+- [x] If departure city is left blank, defaults to "Buenos Aires".
+- [x] If return city is left blank, it's stored as null (displays same as departure city).
+- [x] On trip edit page, clicking a city name makes it editable inline.
+- [x] Changes save on blur/Enter, cancel on Escape.
+- [x] Existing trips with "Buenos Aires" hardcoded still display correctly.
+
+### Task 6 Implementation Summary (Completed)
+
+- Updated `src/app/[locale]/trips/new/page.tsx` to collect cities at creation time:
+  - imported and used `Label`
+  - added labeled `departure_city` and `return_city` inputs under the trip title field
+  - wired placeholders to localized strings (`departureCityPlaceholder`, `returnCityPlaceholder`)
+- Updated `src/app/actions/trips.ts` in `createTripForLocaleAction`:
+  - parsed `departure_city` and `return_city` from `formData`
+  - normalized empty/whitespace values
+  - enforced fallback to `DEFAULT_DEPARTURE_CITY` for empty departure city
+  - persisted both values immediately after trip creation with `updateTrip`
+- Added `updateTripCitiesAction` in `src/app/actions/trips.ts`:
+  - validates/authenticates with `requireUserId(locale)`
+  - normalizes payload (`departureCity` fallback to default, `returnCity` empty to `null`)
+  - updates trip city fields via `updateTrip`
+  - revalidates both `/${locale}/trips` and `/${locale}/trips/${tripId}`
+- Added new client component `src/components/trips/trip-city-banner.tsx`:
+  - preserves existing banner visuals (PlaneTakeoff, dashed connector, PlaneLanding)
+  - supports inline edit on both city names
+  - saves on blur and Enter using `useTransition` + `updateTripCitiesAction`
+  - cancels on Escape and restores previous values
+  - displays return city fallback to departure city when return city is unset
+- Updated `src/app/[locale]/trips/[tripId]/page.tsx`:
+  - removed static city banner markup
+  - replaced it with `<TripCityBanner ... />` wired to trip locale/id/city values
+- Added Task 6 translation keys in both locales:
+  - `src/messages/en.json`: `departureCity`, `returnCity`, `departureCityPlaceholder`, `returnCityPlaceholder`
+  - `src/messages/es.json`: `departureCity`, `returnCity`, `departureCityPlaceholder`, `returnCityPlaceholder`
+- Verification completed:
+  - `npm run lint` passed (existing warning remains: `@next/next/no-img-element` in `src/components/layout/user-menu.tsx`)
+  - `npm run build` passed successfully
 
 ---
 

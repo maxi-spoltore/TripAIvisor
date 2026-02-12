@@ -4,6 +4,7 @@ import { createTripAndRedirectAction } from '@/app/actions/trips';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type NewTripPageProps = {
   params: {
@@ -27,6 +28,14 @@ export default async function NewTripPage({ params }: NewTripPageProps) {
         <CardContent>
           <form action={createTripAction} className="flex flex-col gap-4">
             <Input name="title" placeholder={tTrips('defaultTitle')} />
+            <div className="space-y-1">
+              <Label htmlFor="departure_city">{tTrips('departureCity')}</Label>
+              <Input id="departure_city" name="departure_city" placeholder={tTrips('departureCityPlaceholder')} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="return_city">{tTrips('returnCity')}</Label>
+              <Input id="return_city" name="return_city" placeholder={tTrips('returnCityPlaceholder')} />
+            </div>
             <div className="flex items-center gap-2">
               <Button type="submit">{tCommon('save')}</Button>
               <Link

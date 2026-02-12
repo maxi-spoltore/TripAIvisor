@@ -116,6 +116,16 @@ export async function createTripForLocaleAction(locale: string, formData: FormDa
   const title = typeof titleValue === 'string' ? titleValue : '';
 
   const trip = await createTrip(userId, title);
+  const departureCityValue = formData.get('departure_city');
+  const returnCityValue = formData.get('return_city');
+  const departureCity =
+    normalizeOptionalText(typeof departureCityValue === 'string' ? departureCityValue : null) ?? DEFAULT_DEPARTURE_CITY;
+  const returnCity = normalizeOptionalText(typeof returnCityValue === 'string' ? returnCityValue : null);
+
+  await updateTrip(trip.trip_id, {
+    departure_city: departureCity,
+    return_city: returnCity
+  });
 
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/trips`);
@@ -155,6 +165,32 @@ export async function updateTripTitleAction(input: { locale: string; tripId: num
   });
 
   revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/trips`);
+  revalidatePath(`/${locale}/trips/${tripId}`);
+}
+
+export async function updateTripCitiesAction(input: {
+  locale: string;
+  tripId: number;
+  departureCity: string;
+  returnCity: string | null;
+}): Promise<void> {
+  const { locale, tripId, departureCity, returnCity } = input;
+
+  await requireUserId(locale);
+
+  if (!Number.isFinite(tripId)) {
+    return;
+  }
+
+  const safeDepartureCity = departureCity.trim() || DEFAULT_DEPARTURE_CITY;
+  const safeReturnCity = normalizeOptionalText(returnCity);
+
+  await updateTrip(tripId, {
+    departure_city: safeDepartureCity,
+    return_city: safeReturnCity
+  });
+
   revalidatePath(`/${locale}/trips`);
   revalidatePath(`/${locale}/trips/${tripId}`);
 }

@@ -37,6 +37,10 @@
     "startDate": "Fecha de Salida",
     "endDate": "Fecha de Regreso",
     "days": "{count} días",
+    "departureCity": "Ciudad de salida",
+    "returnCity": "Ciudad de regreso",
+    "departureCityPlaceholder": "Ej: Buenos Aires",
+    "returnCityPlaceholder": "Igual que salida si se deja vacío",
     "departureFrom": "Salida desde {city}",
     "returnTo": "Regreso a {city}",
     "backToTrips": "Volver a viajes"

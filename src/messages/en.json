@@ -37,6 +37,10 @@
     "startDate": "Start Date",
     "endDate": "End Date",
     "days": "{count} days",
+    "departureCity": "Departure city",
+    "returnCity": "Return city",
+    "departureCityPlaceholder": "e.g., Buenos Aires",
+    "returnCityPlaceholder": "Same as departure if empty",
     "departureFrom": "Departure from {city}",
     "returnTo": "Return to {city}",
     "backToTrips": "Back to trips"
