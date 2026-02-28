@@ -1,7 +1,7 @@
 'use client';
 
 import { DragEvent, FormEvent, Fragment, useEffect, useState, useTransition } from 'react';
-import { Plus } from 'lucide-react';
+import { PlaneLanding, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   createDestinationAction,
@@ -21,15 +21,19 @@ import {
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
-import type { DestinationWithRelations } from '@/types/database';
+import type { DestinationWithRelations, Transport } from '@/types/database';
 import { DestinationCard } from './destination-card';
 import { DestinationModal, type DestinationModalSubmitInput } from './destination-modal';
+import { ReturnCard } from './return-card';
 
 type DestinationListProps = {
   locale: string;
   tripId: number;
   destinations: DestinationWithRelations[];
   startDate: string | null;
+  returnCity?: string;
+  returnDate?: string | null;
+  returnTransport?: Transport | null;
 };
 
 function sortByPosition(destinations: DestinationWithRelations[]): DestinationWithRelations[] {
@@ -43,7 +47,15 @@ function withNormalizedPositions(destinations: DestinationWithRelations[]): Dest
   }));
 }
 
-export function DestinationList({ locale, tripId, destinations, startDate }: DestinationListProps) {
+export function DestinationList({
+  locale,
+  tripId,
+  destinations,
+  startDate,
+  returnCity,
+  returnDate,
+  returnTransport
+}: DestinationListProps) {
   const tCommon = useTranslations('common');
   const tDestinations = useTranslations('destinations');
   const [items, setItems] = useState<DestinationWithRelations[]>(() => sortByPosition(destinations));
@@ -384,6 +396,22 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
               </div>
             </Fragment>
           ))}
+          {returnCity ? (
+            <div className="relative flex gap-4 pb-4">
+              <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-700 text-white">
+                <PlaneLanding className="h-4 w-4" />
+              </div>
+              <div className="flex-1">
+                <ReturnCard
+                  locale={locale}
+                  returnCity={returnCity}
+                  returnDate={returnDate ?? null}
+                  returnTransport={returnTransport ?? null}
+                  tripId={tripId}
+                />
+              </div>
+            </div>
+          ) : null}
           {insertAtPosition === null ? addDestinationForm(true) : null}
         </div>
       )}

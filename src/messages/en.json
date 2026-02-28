@@ -48,7 +48,9 @@
     "returnCityPlaceholder": "Same as departure if empty",
     "departureFrom": "Departure from {city}",
     "returnTo": "Return to {city}",
-    "backToTrips": "Back to trips"
+    "backToTrips": "Back to trips",
+    "endOfTrip": "End of trip",
+    "editReturn": "Edit return details"
   },
   "destinations": {
     "add": "Add Destination",

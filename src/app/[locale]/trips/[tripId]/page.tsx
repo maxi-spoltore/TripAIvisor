@@ -8,6 +8,7 @@ import { TripCityBanner } from '@/components/trips/trip-city-banner';
 import { TripHeader } from '@/components/trips/trip-header';
 import { auth } from '@/lib/auth';
 import { getTripById } from '@/lib/db/queries/trips';
+import { calculateDate } from '@/lib/utils/dates';
 import { exportTrip } from '@/lib/utils/import-export';
 
 type TripEditorPageProps = {
@@ -56,6 +57,7 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
 
   const tTrips = await getTranslations({ locale, namespace: 'trips' });
   const totalDays = trip.destinations.reduce((acc, destination) => acc + destination.duration, 0);
+  const returnDate = calculateDate(trip.start_date, totalDays);
   const exportedTrip = exportTrip(trip);
 
   return (
@@ -85,7 +87,15 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
         tripId={trip.trip_id}
       />
 
-      <DestinationList destinations={trip.destinations} locale={locale} startDate={trip.start_date} tripId={trip.trip_id} />
+      <DestinationList
+        destinations={trip.destinations}
+        locale={locale}
+        returnCity={trip.return_city ?? trip.departure_city}
+        returnDate={returnDate}
+        returnTransport={trip.return_transport}
+        startDate={trip.start_date}
+        tripId={trip.trip_id}
+      />
     </main>
   );
 }

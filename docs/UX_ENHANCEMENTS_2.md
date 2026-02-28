@@ -1080,12 +1080,44 @@ There's no UI for viewing/editing return transport details. The DB already suppo
 ```
 
 ### Acceptance Criteria
-- [ ] "End of trip" card appears at the bottom of the destination timeline.
-- [ ] Shows return city name and computed return date.
-- [ ] Clicking edit opens a modal with transport-only fields.
-- [ ] Saving transport details persists them (reload shows saved data).
-- [ ] If no return transport exists, the card shows the city/date with an "Edit return details" button.
-- [ ] Card integrates visually into the timeline with a distinct node (PlaneLanding icon).
+- [x] "End of trip" card appears at the bottom of the destination timeline.
+- [x] Shows return city name and computed return date.
+- [x] Clicking edit opens a modal with transport-only fields.
+- [x] Saving transport details persists them (reload shows saved data).
+- [x] If no return transport exists, the card shows the city/date with an "Edit return details" button.
+- [x] Card integrates visually into the timeline with a distinct node (PlaneLanding icon).
+
+### Task 11 Implementation Summary (Completed)
+
+- Added `updateReturnTransportAction` to `src/app/actions/trips.ts`:
+  - validates/authenticates with `requireUserId(locale)`
+  - validates `tripId`
+  - persists return transport through `upsertTransport({ trip_id, transport_role: 'return', ...transport })`
+  - revalidates `/${locale}/trips/${tripId}`
+  - returns the updated `Transport` row for immediate UI sync
+- Added `src/components/trips/return-transport-modal.tsx`:
+  - transport-only modal with the 7 required fields
+  - uses the existing UI primitives (`Dialog`, `Input`, `Select`, `Button`)
+  - normalizes optional fields with `toNullable` before save
+  - supports pending state and localized labels/buttons
+- Replaced placeholder `src/components/trips/return-card.tsx` with full implementation:
+  - localized end-of-trip title and formatted return date
+  - transport summary rendering using destination-card-style helper logic (`getTransportIconByType`, `getTransportDetails`)
+  - edit button opens modal and saves via `updateReturnTransportAction`
+  - updates local client state with returned transport so changes are visible immediately
+- Updated `src/components/trips/destination-list.tsx`:
+  - added optional props `returnCity`, `returnDate`, `returnTransport`
+  - rendered return node row after the last destination and before bottom add form
+  - integrated a distinct `PlaneLanding` timeline node to keep it in the timeline flow
+- Updated `src/app/[locale]/trips/[tripId]/page.tsx`:
+  - computes `returnDate` with `calculateDate(trip.start_date, totalDays)`
+  - passes `returnCity={trip.return_city ?? trip.departure_city}`, `returnDate`, and `returnTransport` to `DestinationList`
+- Added Task 11 translations:
+  - `src/messages/en.json`: `trips.endOfTrip`, `trips.editReturn`
+  - `src/messages/es.json`: `trips.endOfTrip`, `trips.editReturn`
+- Verification completed:
+  - `npm run lint` passed
+  - `npm run build` passed
 
 ---
 

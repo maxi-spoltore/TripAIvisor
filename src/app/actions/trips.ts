@@ -14,7 +14,7 @@ import {
   type ExportedTransport,
   validateImportData
 } from '@/lib/utils/import-export';
-import type { TransportType } from '@/types/database';
+import type { Transport, TransportType } from '@/types/database';
 
 type SessionUser = {
   user?: {
@@ -216,6 +216,37 @@ export async function updateTripDatesAction(input: {
 
   revalidatePath(`/${locale}/trips`);
   revalidatePath(`/${locale}/trips/${tripId}`);
+}
+
+export async function updateReturnTransportAction(input: {
+  locale: string;
+  tripId: number;
+  transport: {
+    transport_type: TransportType;
+    leave_accommodation_time: string | null;
+    terminal: string | null;
+    company: string | null;
+    booking_number: string | null;
+    booking_code: string | null;
+    departure_time: string | null;
+  };
+}): Promise<Transport> {
+  const { locale, tripId, transport } = input;
+
+  await requireUserId(locale);
+
+  if (!Number.isFinite(tripId)) {
+    throw new Error('Invalid trip id.');
+  }
+
+  const result = await upsertTransport({
+    trip_id: tripId,
+    transport_role: 'return',
+    ...transport
+  });
+
+  revalidatePath(`/${locale}/trips/${tripId}`);
+  return result;
 }
 
 export async function importTripFromDataAction(input: {
