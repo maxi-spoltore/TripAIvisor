@@ -123,8 +123,9 @@ export async function createDestinationAction(input: {
   tripId: number;
   city: string;
   duration: number;
+  position?: number;
 }): Promise<Destination> {
-  const { locale, tripId, city, duration } = input;
+  const { locale, tripId, city, duration, position } = input;
 
   await requireUserId(locale);
 
@@ -132,7 +133,7 @@ export async function createDestinationAction(input: {
     throw new Error('Invalid trip id.');
   }
 
-  const destination = await createDestination(tripId, city, duration);
+  const destination = await createDestination(tripId, city, duration, position);
   revalidateTripPaths(locale, tripId);
 
   return destination;

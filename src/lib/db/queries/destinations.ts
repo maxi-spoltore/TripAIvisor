@@ -35,6 +35,31 @@ function normalizeCity(city: string): string {
   return normalized;
 }
 
+async function shiftDestinationsDown(tripId: number, fromPosition: number): Promise<void> {
+  const supabase = createAdminClient();
+  const { data, error: fetchError } = await supabase
+    .from('destinations')
+    .select('destination_id, position')
+    .eq('trip_id', tripId)
+    .gte('position', fromPosition)
+    .order('position', { ascending: false });
+
+  if (fetchError) {
+    throw fetchError;
+  }
+
+  for (const destination of (data ?? []) as Pick<Destination, 'destination_id' | 'position'>[]) {
+    const { error } = await supabase
+      .from('destinations')
+      .update({ position: destination.position + 1 })
+      .eq('destination_id', destination.destination_id);
+
+    if (error) {
+      throw error;
+    }
+  }
+}
+
 export async function getDestinationsByTrip(tripId: number): Promise<Destination[]> {
   const supabase = createAdminClient();
   const { data, error } = await supabase
@@ -57,10 +82,15 @@ export async function createDestination(
   position?: number
 ): Promise<Destination> {
   const supabase = createAdminClient();
-  const resolvedPosition =
-    typeof position === 'number' && Number.isFinite(position)
-      ? Math.max(0, Math.trunc(position))
-      : await getNextDestinationPosition(tripId);
+  const nextPosition = await getNextDestinationPosition(tripId);
+  const hasExplicitPosition = typeof position === 'number' && Number.isFinite(position);
+  const resolvedPosition = hasExplicitPosition
+    ? Math.max(0, Math.min(Math.trunc(position), nextPosition))
+    : nextPosition;
+
+  if (hasExplicitPosition && resolvedPosition < nextPosition) {
+    await shiftDestinationsDown(tripId, resolvedPosition);
+  }
 
   const { data, error } = await supabase
     .from('destinations')

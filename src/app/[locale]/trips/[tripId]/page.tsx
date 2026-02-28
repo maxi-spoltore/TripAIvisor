@@ -69,6 +69,7 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
       </Link>
 
       <TripHeader
+        endDate={trip.end_date}
         exportData={exportedTrip}
         locale={locale}
         startDate={trip.start_date}

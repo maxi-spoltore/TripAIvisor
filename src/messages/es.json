@@ -36,6 +36,11 @@
     "setStartDate": "Configurar fecha de inicio",
     "startDate": "Fecha de Salida",
     "endDate": "Fecha de Regreso",
+    "startDateLabel": "Inicio",
+    "endDateLabel": "Fin",
+    "endDateBeforeStart": "La fecha de fin no puede ser anterior a la de inicio",
+    "endDateTooEarly": "Fecha de fin muy temprana: los destinos requieren al menos {days} días",
+    "setStartDateFirst": "Primero configura la fecha de inicio",
     "days": "{count} días",
     "departureCity": "Ciudad de salida",
     "returnCity": "Ciudad de regreso",
@@ -51,6 +56,7 @@
     "city": "Ciudad",
     "duration": "Duración (días)",
     "newCity": "Nueva Ciudad",
+    "insertHere": "Agregar ciudad aquí",
     "confirmDeleteDestination": "Este destino y todos sus detalles serán eliminados permanentemente."
   },
   "transport": {

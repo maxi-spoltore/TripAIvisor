@@ -1,6 +1,6 @@
 'use client';
 
-import { DragEvent, FormEvent, useEffect, useState, useTransition } from 'react';
+import { DragEvent, FormEvent, Fragment, useEffect, useState, useTransition } from 'react';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -52,6 +52,7 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [insertAtPosition, setInsertAtPosition] = useState<number | null>(null);
   const [newCity, setNewCity] = useState('');
   const [newDuration, setNewDuration] = useState('2');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -76,6 +77,7 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
   const handleDragStart = (event: DragEvent, index: number) => {
     setDraggedIndex(index);
     setOpenMenuId(null);
+    setInsertAtPosition(null);
     event.dataTransfer.effectAllowed = 'move';
   };
 
@@ -100,6 +102,7 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
     setItems(normalizedItems);
     setDraggedIndex(null);
     setOpenMenuId(null);
+    setInsertAtPosition(null);
     setErrorMessage(null);
 
     startTransition(async () => {
@@ -116,7 +119,7 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
     });
   };
 
-  const handleAddDestination = (event: FormEvent<HTMLFormElement>) => {
+  const handleAddDestination = (event: FormEvent<HTMLFormElement>, atPosition?: number) => {
     event.preventDefault();
 
     const trimmedCity = newCity.trim();
@@ -136,23 +139,30 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
           locale,
           tripId,
           city: trimmedCity,
-          duration
+          duration,
+          position: atPosition
         });
 
-        setItems((previousItems) =>
-          sortByPosition([
-            ...previousItems,
-            {
-              ...createdDestination,
-              transport: null,
-              accommodation: null
-            }
-          ])
-        );
+        setItems((previousItems) => {
+          const nextItems = [...previousItems];
+          const normalizedDestination = {
+            ...createdDestination,
+            transport: null,
+            accommodation: null
+          };
+
+          if (typeof atPosition === 'number') {
+            nextItems.splice(atPosition, 0, normalizedDestination);
+            return withNormalizedPositions(nextItems);
+          }
+
+          return sortByPosition([...previousItems, normalizedDestination]);
+        });
         setExpandedCards((previousCards) => ({
           ...previousCards,
           [createdDestination.destination_id]: false
         }));
+        setInsertAtPosition(null);
         setNewCity('');
         setNewDuration('2');
       } catch {
@@ -253,8 +263,8 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
   const editingDestination =
     editingDestinationId === null ? null : items.find((item) => item.destination_id === editingDestinationId) ?? null;
 
-  const addDestinationForm = (showTimelineNode: boolean) => (
-    <form className="relative flex gap-4" onSubmit={handleAddDestination}>
+  const addDestinationForm = (showTimelineNode: boolean, atPosition?: number) => (
+    <form className="relative flex gap-4" onSubmit={(event) => handleAddDestination(event, atPosition)}>
       {showTimelineNode ? (
         <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-dashed border-slate-300 bg-white text-slate-400">
           <Plus className="h-4 w-4" />
@@ -267,23 +277,27 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
           showTimelineNode ? '' : 'ml-0'
         )}
       >
-        <Input
-          disabled={isPending}
-          onChange={(event) => setNewCity(event.target.value)}
-          placeholder={locale === 'es' ? 'Nueva Ciudad' : 'New City'}
-          value={newCity}
-          className="flex-[2]"
-        />
-        <Input
-          disabled={isPending}
-          min={1}
-          onChange={(event) => setNewDuration(event.target.value)}
-          placeholder={locale === 'es' ? 'Días' : 'Days'}
-          type="number"
-          value={newDuration}
-          className="flex-1"
-        />
-        <Button disabled={isPending} type="submit">
+        <div className="flex flex-[2] flex-col gap-1">
+          <label className="text-xs font-medium text-slate-500">{tDestinations('city')}</label>
+          <Input
+            disabled={isPending}
+            onChange={(event) => setNewCity(event.target.value)}
+            placeholder={locale === 'es' ? 'Nueva Ciudad' : 'New City'}
+            value={newCity}
+          />
+        </div>
+        <div className="flex flex-1 flex-col gap-1">
+          <label className="text-xs font-medium text-slate-500">{tDestinations('duration')}</label>
+          <Input
+            disabled={isPending}
+            min={1}
+            onChange={(event) => setNewDuration(event.target.value)}
+            placeholder={locale === 'es' ? 'Días' : 'Days'}
+            type="number"
+            value={newDuration}
+          />
+        </div>
+        <Button className="self-end" disabled={isPending} type="submit">
           {isPending ? (
             <>
               <Spinner className="mr-2" />
@@ -293,6 +307,17 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
             locale === 'es' ? 'Agregar' : 'Add'
           )}
         </Button>
+        {typeof atPosition === 'number' ? (
+          <Button
+            className="self-end"
+            disabled={isPending}
+            onClick={() => setInsertAtPosition(null)}
+            type="button"
+            variant="outline"
+          >
+            {tCommon('cancel')}
+          </Button>
+        ) : null}
       </div>
     </form>
   );
@@ -312,35 +337,54 @@ export function DestinationList({ locale, tripId, destinations, startDate }: Des
         <div className="relative space-y-0">
           <div className="absolute left-5 top-6 bottom-6 w-0.5 bg-slate-200" />
           {items.map((destination, index) => (
-            <div
-              key={destination.destination_id}
-              draggable={!isPending}
-              onDragOver={handleDragOver}
-              onDragStart={(event) => handleDragStart(event, index)}
-              onDrop={(event) => handleDrop(event, index)}
-              className={cn('relative flex gap-4 pb-4', draggedIndex === index ? 'opacity-60' : null)}
-            >
-              <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-primary-300 bg-white text-sm font-bold text-primary-700">
-                {index + 1}
+            <Fragment key={destination.destination_id}>
+              {insertAtPosition === index ? (
+                <div className="pb-4">{addDestinationForm(true, index)}</div>
+              ) : (
+                <div className="group/insert relative flex h-6 items-center">
+                  <button
+                    className="relative z-10 ml-2.5 flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-slate-300 bg-white text-slate-400 opacity-0 transition-all duration-150 group-hover/insert:opacity-100 hover:border-primary-400 hover:text-primary-500 focus-visible:opacity-100"
+                    disabled={isPending}
+                    onClick={() => setInsertAtPosition(index)}
+                    title={tDestinations('insertHere')}
+                    type="button"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                  <span className="pointer-events-none absolute left-10 top-1/2 z-20 -translate-y-1/2 rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white opacity-0 transition-opacity duration-150 group-hover/insert:opacity-100 group-focus-within/insert:opacity-100">
+                    {tDestinations('insertHere')}
+                  </span>
+                </div>
+              )}
+              <div
+                draggable={!isPending}
+                onDragOver={handleDragOver}
+                onDragStart={(event) => handleDragStart(event, index)}
+                onDrop={(event) => handleDrop(event, index)}
+                className={cn('relative flex gap-4 pb-4', draggedIndex === index ? 'opacity-60' : null)}
+              >
+                <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-primary-300 bg-white text-sm font-bold text-primary-700">
+                  {index + 1}
+                </div>
+                <div className="flex-1">
+                  <DestinationCard
+                    destination={destination}
+                    destinations={items}
+                    expanded={Boolean(expandedCards[destination.destination_id])}
+                    index={index}
+                    locale={locale}
+                    onDelete={() => handleRequestDeleteDestination(destination.destination_id)}
+                    onEdit={() => handleOpenModal(destination.destination_id)}
+                    onToggle={() => handleToggleCard(destination.destination_id)}
+                    openMenuId={openMenuId}
+                    setOpenMenuId={setOpenMenuId}
+                    startDate={startDate}
+                  />
+                </div>
               </div>
-              <div className="flex-1">
-                <DestinationCard
-                  destination={destination}
-                  destinations={items}
-                  expanded={Boolean(expandedCards[destination.destination_id])}
-                  index={index}
-                  locale={locale}
-                  onDelete={() => handleRequestDeleteDestination(destination.destination_id)}
-                  onEdit={() => handleOpenModal(destination.destination_id)}
-                  onToggle={() => handleToggleCard(destination.destination_id)}
-                  openMenuId={openMenuId}
-                  setOpenMenuId={setOpenMenuId}
-                  startDate={startDate}
-                />
-              </div>
-            </div>
+            </Fragment>
           ))}
-          {addDestinationForm(true)}
+          {insertAtPosition === null ? addDestinationForm(true) : null}
         </div>
       )}
 

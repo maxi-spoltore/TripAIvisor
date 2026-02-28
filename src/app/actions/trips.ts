@@ -195,6 +195,29 @@ export async function updateTripCitiesAction(input: {
   revalidatePath(`/${locale}/trips/${tripId}`);
 }
 
+export async function updateTripDatesAction(input: {
+  locale: string;
+  tripId: number;
+  startDate: string | null;
+  endDate: string | null;
+}): Promise<void> {
+  const { locale, tripId, startDate, endDate } = input;
+
+  await requireUserId(locale);
+
+  if (!Number.isFinite(tripId)) {
+    return;
+  }
+
+  await updateTrip(tripId, {
+    start_date: normalizeOptionalText(startDate),
+    end_date: normalizeOptionalText(endDate)
+  });
+
+  revalidatePath(`/${locale}/trips`);
+  revalidatePath(`/${locale}/trips/${tripId}`);
+}
+
 export async function importTripFromDataAction(input: {
   locale: string;
   data: unknown;

@@ -185,7 +185,7 @@ export async function createTrip(userId: number, title: string): Promise<Trip> {
 
 export async function updateTrip(
   tripId: number,
-  updates: Partial<Pick<Trip, 'title' | 'start_date' | 'departure_city' | 'return_city'>>
+  updates: Partial<Pick<Trip, 'title' | 'start_date' | 'end_date' | 'departure_city' | 'return_city'>>
 ): Promise<Trip> {
   const supabase = createAdminClient();
 

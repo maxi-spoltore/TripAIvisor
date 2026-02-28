@@ -1,32 +1,21 @@
 'use client';
 
-import { Calendar, Download, Share2 } from 'lucide-react';
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { Download, Share2 } from 'lucide-react';
+import { useEffect, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
-import { updateTripTitleAction } from '@/app/actions/trips';
+import { updateTripDatesAction, updateTripTitleAction } from '@/app/actions/trips';
 import { ShareModal } from '@/components/trips/share-modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { validateEndDate } from '@/lib/utils/dates';
 import type { ExportedTrip } from '@/lib/utils/import-export';
-
-function formatDate(dateStr: string, locale: string): string {
-  return new Date(dateStr).toLocaleDateString(locale === 'es' ? 'es-ES' : 'en-US', {
-    day: 'numeric',
-    month: 'short'
-  });
-}
-
-function calculateEndDate(startDate: string, days: number): string {
-  const date = new Date(startDate);
-  date.setDate(date.getDate() + days);
-  return date.toISOString().split('T')[0];
-}
 
 type TripHeaderProps = {
   locale: string;
   tripId: number;
   title: string;
   startDate: string | null;
+  endDate: string | null;
   totalDays: number;
   exportData: ExportedTrip;
 };
@@ -40,10 +29,13 @@ function buildExportFileName(title: string): string {
   return `${normalized || 'trip'}.json`;
 }
 
-export function TripHeader({ locale, tripId, title, startDate, totalDays, exportData }: TripHeaderProps) {
+export function TripHeader({ locale, tripId, title, startDate, endDate, totalDays, exportData }: TripHeaderProps) {
   const tTrips = useTranslations('trips');
   const tShare = useTranslations('share');
   const [editingTitle, setEditingTitle] = useState(title);
+  const [localStartDate, setLocalStartDate] = useState(startDate ?? '');
+  const [localEndDate, setLocalEndDate] = useState(endDate ?? '');
+  const [dateError, setDateError] = useState<string | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -51,21 +43,11 @@ export function TripHeader({ locale, tripId, title, startDate, totalDays, export
     setEditingTitle(title);
   }, [title]);
 
-  const formattedDateRange = useMemo(() => {
-    if (!startDate) {
-      return '';
-    }
-
-    const startLabel = formatDate(startDate, locale);
-    if (totalDays <= 0) {
-      return startLabel;
-    }
-
-    const endDate = calculateEndDate(startDate, totalDays);
-    const endLabel = formatDate(endDate, locale);
-
-    return `${startLabel} - ${endLabel} (${tTrips('days', { count: totalDays })})`;
-  }, [locale, startDate, tTrips, totalDays]);
+  useEffect(() => {
+    setLocalStartDate(startDate ?? '');
+    setLocalEndDate(endDate ?? '');
+    setDateError(null);
+  }, [startDate, endDate]);
 
   const saveTitle = () => {
     const normalizedTitle = editingTitle.trim() || tTrips('defaultTitle');
@@ -86,6 +68,72 @@ export function TripHeader({ locale, tripId, title, startDate, totalDays, export
         title: normalizedTitle
       });
     });
+  };
+
+  const getDateErrorMessage = (error: 'endDateBeforeStart' | 'endDateCollision'): string => {
+    if (error === 'endDateBeforeStart') {
+      return tTrips('endDateBeforeStart');
+    }
+
+    return tTrips('endDateTooEarly', { days: totalDays });
+  };
+
+  const saveDates = (nextStartDate: string | null, nextEndDate: string | null) => {
+    startTransition(async () => {
+      await updateTripDatesAction({
+        locale,
+        tripId,
+        startDate: nextStartDate,
+        endDate: nextEndDate
+      });
+    });
+  };
+
+  const handleStartDateChange = (newStartDate: string) => {
+    setLocalStartDate(newStartDate);
+
+    if (!newStartDate) {
+      setLocalEndDate('');
+      setDateError(null);
+      saveDates(null, null);
+      return;
+    }
+
+    if (localEndDate) {
+      const result = validateEndDate(newStartDate, localEndDate, totalDays);
+
+      if (!result.valid && result.error) {
+        setDateError(getDateErrorMessage(result.error));
+        return;
+      }
+    }
+
+    setDateError(null);
+    saveDates(newStartDate, localEndDate || null);
+  };
+
+  const handleEndDateChange = (newEndDate: string) => {
+    setLocalEndDate(newEndDate);
+
+    if (!newEndDate) {
+      setDateError(null);
+      saveDates(localStartDate || null, null);
+      return;
+    }
+
+    if (!localStartDate) {
+      setDateError(tTrips('setStartDateFirst'));
+      return;
+    }
+
+    const result = validateEndDate(localStartDate, newEndDate, totalDays);
+    if (!result.valid && result.error) {
+      setDateError(getDateErrorMessage(result.error));
+      return;
+    }
+
+    setDateError(null);
+    saveDates(localStartDate, newEndDate);
   };
 
   const handleExportTrip = () => {
@@ -121,14 +169,40 @@ export function TripHeader({ locale, tripId, title, startDate, totalDays, export
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          {formattedDateRange ? (
-            <span className="inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-700">
-              <Calendar className="h-3.5 w-3.5" />
-              {formattedDateRange}
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-slate-500" htmlFor="trip-start-date">
+              {tTrips('startDateLabel')}
+            </label>
+            <input
+              className="rounded-lg border border-slate-300 px-2 py-1 text-sm"
+              disabled={isPending}
+              id="trip-start-date"
+              onChange={(event) => handleStartDateChange(event.target.value)}
+              type="date"
+              value={localStartDate}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-slate-500" htmlFor="trip-end-date">
+              {tTrips('endDateLabel')}
+            </label>
+            <input
+              className="rounded-lg border border-slate-300 px-2 py-1 text-sm"
+              disabled={isPending}
+              id="trip-end-date"
+              onChange={(event) => handleEndDateChange(event.target.value)}
+              type="date"
+              value={localEndDate}
+            />
+          </div>
+
+          {totalDays > 0 ? (
+            <span className="rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-700">
+              {tTrips('days', { count: totalDays })}
             </span>
           ) : null}
 
-          <div className={`flex gap-2 ${formattedDateRange ? 'ml-auto' : ''}`}>
+          <div className="ml-auto flex gap-2">
             <Button onClick={handleExportTrip} type="button" variant="outline" size="sm">
               <Download className="mr-2 h-4 w-4" />
               {tTrips('export')}
@@ -139,6 +213,8 @@ export function TripHeader({ locale, tripId, title, startDate, totalDays, export
             </Button>
           </div>
         </div>
+
+        {dateError ? <p className="mt-2 text-sm text-red-600">{dateError}</p> : null}
       </div>
 
       <ShareModal locale={locale} onClose={() => setIsShareModalOpen(false)} open={isShareModalOpen} tripId={tripId} />

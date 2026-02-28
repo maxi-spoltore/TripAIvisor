@@ -36,6 +36,11 @@
     "setStartDate": "Set start date",
     "startDate": "Start Date",
     "endDate": "End Date",
+    "startDateLabel": "Start",
+    "endDateLabel": "End",
+    "endDateBeforeStart": "End date cannot be before start date",
+    "endDateTooEarly": "End date too early: destinations require at least {days} days",
+    "setStartDateFirst": "Set a start date first",
     "days": "{count} days",
     "departureCity": "Departure city",
     "returnCity": "Return city",
@@ -51,6 +56,7 @@
     "city": "City",
     "duration": "Duration (days)",
     "newCity": "New City",
+    "insertHere": "Add city here",
     "confirmDeleteDestination": "This destination and all its details will be permanently deleted."
   },
   "transport": {
