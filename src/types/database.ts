@@ -74,6 +74,39 @@ export interface Transport {
   updated_at: string;
 }
 
+export interface TransportLeg {
+  leg_id: number;
+  transport_id: number;
+  position: number;
+  origin_city: string | null;
+  destination_city: string | null;
+  company: string | null;
+  booking_number: string | null;
+  booking_code: string | null;
+  departure_time: string | null;
+  arrival_time: string | null;
+  day_offset: number;
+  terminal: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TransportLegInput {
+  origin_city: string | null;
+  destination_city: string | null;
+  company: string | null;
+  booking_number: string | null;
+  booking_code: string | null;
+  departure_time: string | null;
+  arrival_time: string | null;
+  day_offset: number;
+  terminal: string | null;
+}
+
+export interface TransportWithLegs extends Transport {
+  legs: TransportLeg[];
+}
+
 export interface Accommodation {
   accommodation_id: number;
   destination_id: number;
@@ -103,6 +136,6 @@ export interface DestinationWithRelations extends Destination {
 
 export interface TripWithRelations extends Trip {
   destinations: DestinationWithRelations[];
-  departure_transport: Transport | null;
-  return_transport: Transport | null;
+  departure_transport: TransportWithLegs | null;
+  return_transport: TransportWithLegs | null;
 }

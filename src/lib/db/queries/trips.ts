@@ -3,6 +3,8 @@ import type {
   Accommodation,
   Destination,
   DestinationWithRelations,
+  TransportLeg,
+  TransportWithLegs,
   Transport,
   Trip,
   TripWithRelations
@@ -139,6 +141,31 @@ export async function getTripById(tripId: number): Promise<TripWithRelations | n
   }
 
   const tripTransports = (tripTransportRows ?? []) as Transport[];
+  const departureTransport = tripTransports.find((transport) => transport.transport_role === 'departure') ?? null;
+  const returnTransport = tripTransports.find((transport) => transport.transport_role === 'return') ?? null;
+
+  const transportIds = [departureTransport?.transport_id, returnTransport?.transport_id].filter(
+    (id): id is number => id !== undefined && id !== null
+  );
+
+  const legsByTransportId = new Map<number, TransportLeg[]>();
+  if (transportIds.length > 0) {
+    const { data: legsRows, error: legsError } = await supabase
+      .from('transport_legs')
+      .select('*')
+      .in('transport_id', transportIds)
+      .order('position', { ascending: true });
+
+    if (legsError) {
+      throw legsError;
+    }
+
+    for (const leg of (legsRows ?? []) as TransportLeg[]) {
+      const existingLegs = legsByTransportId.get(leg.transport_id) ?? [];
+      existingLegs.push(leg);
+      legsByTransportId.set(leg.transport_id, existingLegs);
+    }
+  }
 
   const transportsByDestinationId = new Map<number, Transport>();
   for (const transport of destinationTransports) {
@@ -161,8 +188,12 @@ export async function getTripById(tripId: number): Promise<TripWithRelations | n
   return {
     ...trip,
     destinations: destinationsWithRelations,
-    departure_transport: tripTransports.find((transport) => transport.transport_role === 'departure') ?? null,
-    return_transport: tripTransports.find((transport) => transport.transport_role === 'return') ?? null
+    departure_transport: departureTransport
+      ? ({ ...departureTransport, legs: legsByTransportId.get(departureTransport.transport_id) ?? [] } as TransportWithLegs)
+      : null,
+    return_transport: returnTransport
+      ? ({ ...returnTransport, legs: legsByTransportId.get(returnTransport.transport_id) ?? [] } as TransportWithLegs)
+      : null
   };
 }
 

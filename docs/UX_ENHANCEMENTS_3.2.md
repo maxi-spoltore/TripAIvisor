@@ -1,14 +1,20 @@
 # Multi-Leg Transport (Transport Legs)
 
-## Context
+Five tasks. Tasks 2–5 depend on Task 1 being complete. Task 3 can run in parallel with Task 2. Tasks 4 and 5 depend on both Task 2 and Task 3.
 
-This is a future enhancement for structured multi-stop layover data. When a user flies Buenos Aires -> Rio de Janeiro -> Panama City -> Cancun, each leg should have its own flight number, company, times, and terminal — similar to how airline booking systems present itineraries.
+---
 
-Phase 1 handles transit cities (where you leave the airport and visit briefly) as separate stopover cards. Phase 2 handles airport layovers (where you stay airside) as structured data within a single transport entry.
+## Spec Reference
 
-## Schema
+This section defines the data model and behavioral rules that all tasks implement. Read before starting any task.
 
-**New migration file: `supabase/migrations/YYYYMMDD_add_transport_legs.sql`**
+### Context
+
+When a user flies Buenos Aires → Rio de Janeiro → Panama City → Cancún, each leg should have its own flight number, company, times, and terminal — similar to airline booking systems. Phase 1 (3.1) handles transit cities as separate destination cards. This phase handles airport layovers as structured data within a single transport entry.
+
+This phase also backfills return transport parity: `arrival_time` and `travel_days` currently only exist on the departure transport and must be added to return transport before legs can be implemented there.
+
+### Schema
 
 ```sql
 create table if not exists transport_legs (
@@ -22,18 +28,330 @@ create table if not exists transport_legs (
   booking_code text,
   departure_time time,
   arrival_time time,
+  day_offset integer not null default 0 check (day_offset >= 0),
   terminal text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  unique (transport_id, position)
 );
 
 create index idx_transport_legs_transport_id on transport_legs (transport_id);
+
+create trigger set_transport_legs_updated_at
+  before update on transport_legs
+  for each row execute procedure moddatetime(updated_at);
 ```
 
-## Types
+**`day_offset`**: how many days after the transport's departure date this leg arrives. `0` = same day, `1` = next day. Anchors overnight legs (departs 22:00, arrives 03:00 next day → `day_offset = 1`) without requiring full timestamps.
+
+### Single-leg ↔ Multi-leg Rules
+
+- **0 legs**: Transport renders from parent-level fields (`company`, `booking_number`, etc.). Default and pre-existing behavior.
+- **2+ legs**: Parent-level fields are ignored in the UI. Legs are the sole display source.
+- **1 leg**: Transient state only. Valid during editing, not a stable resting state.
+
+**Transition single → multi (adding first leg):** A new leg at `position = 0` is created. The current parent-level fields (`company`, `booking_number`, `booking_code`, `departure_time`, `arrival_time`, `terminal`) are copied into leg 0 automatically. Parent fields remain in the DB untouched.
+
+**Transition multi → single (reverting):** Only allowed when exactly 1 leg remains. The single leg's fields are written back to the parent transport fields. All legs are then deleted.
+
+### Position Renumbering
+
+Legs are zero-indexed contiguous integers (0, 1, 2, …).
+
+- **Delete leg at position N:** `UPDATE transport_legs SET position = position - 1 WHERE transport_id = $1 AND position > $2`
+- **Add leg:** Appended at `max(position) + 1`. No renumbering needed.
+
+### Card Display Rules
+
+When `legs.length >= 2`, departure-card and return-card render a legs list instead of parent transport fields:
+
+```
+✈ Flight itinerary · 3 legs                    [▲ collapse]
+  Leg 1: Buenos Aires → Rio de Janeiro
+         Aerolíneas AR1234 | Terminal 2
+         Departs 13:00 · Arrives 17:00
+         ── 2h 30m connection ──
+  Leg 2: Rio de Janeiro → Panama City
+         Copa CM456 | Terminal 1
+         Departs 19:30 · Arrives 23:00
+         ── 2h 30m connection ──
+  Leg 3: Panama City → Cancún
+         Copa CM789 | Terminal 1
+         Departs 01:30 · Arrives 04:00 (+1 day)
+  Total journey: ~15h 30m
+```
+
+- **Collapse:** At 3+ legs, the list is collapsed by default. Header row always visible. Click to expand.
+- **Layover:** Computed from `day_offset` + times. Displayed as `── Xh Ym connection ──` between legs. Amber color when < 60 minutes.
+- **Day offset label:** `(+N day)` next to arrival time when `day_offset > 0`.
+- **Total journey:** First leg departure to last leg arrival (using last leg's `day_offset`). Shown at bottom.
+
+### Soft Hints (Modal)
+
+- First leg's `origin_city` ≠ trip's departure city → show below the field: *"Doesn't match your departure city."*
+- Last leg's `destination_city` ≠ next destination city → show below the field: *"Doesn't match your next destination."*
+
+---
+
+## Task 1: Return Transport Parity
+
+### Problem
+
+`arrival_time` and `travel_days` were added to departure transport in phase 3.1 but never added to return transport. The action, modal, and card for return transport must be brought to parity before legs can be implemented there.
+
+### Changes
+
+**File: `src/app/actions/trips.ts`** — extend `updateReturnTransportAction` input type:
+
+```diff
+ export async function updateReturnTransportAction(input: {
+   locale: string;
+   tripId: number;
+   transport: {
+     transport_type: TransportType;
+     leave_accommodation_time: string | null;
+     terminal: string | null;
+     company: string | null;
+     booking_number: string | null;
+     booking_code: string | null;
+     departure_time: string | null;
++    arrival_time: string | null;
++    travel_days: number;
+   };
+ }): Promise<Transport> {
+```
+
+The spread `...transport` at the call site already forwards all fields to `upsertTransport`, so no further changes are needed in the action body.
+
+**File: `src/components/trips/return-transport-modal.tsx`**
+
+Extend `ReturnTransportSubmitInput`:
+
+```diff
+ export type ReturnTransportSubmitInput = {
+   transport_type: TransportType;
+   leave_accommodation_time: string | null;
+   terminal: string | null;
+   company: string | null;
+   booking_number: string | null;
+   booking_code: string | null;
+   departure_time: string | null;
++  arrival_time: string | null;
++  travel_days: number;
+ };
+```
+
+Extend `ReturnTransportFormState`:
+
+```diff
+ type ReturnTransportFormState = {
+   transport_type: TransportType;
+   leave_accommodation_time: string;
+   terminal: string;
+   company: string;
+   booking_number: string;
+   booking_code: string;
+   departure_time: string;
++  arrival_time: string;
++  travel_days: string;
+ };
+```
+
+Extend `getInitialState`:
+
+```diff
+ function getInitialState(transport: Transport | null): ReturnTransportFormState {
+   return {
+     transport_type: transport?.transport_type ?? 'plane',
+     leave_accommodation_time: toInputValue(transport?.leave_accommodation_time ?? null),
+     terminal: toInputValue(transport?.terminal ?? null),
+     company: toInputValue(transport?.company ?? null),
+     booking_number: toInputValue(transport?.booking_number ?? null),
+     booking_code: toInputValue(transport?.booking_code ?? null),
+     departure_time: toInputValue(transport?.departure_time ?? null),
++    arrival_time: toInputValue(transport?.arrival_time ?? null),
++    travel_days: String(transport?.travel_days ?? 0),
+   };
+ }
+```
+
+Extend `handleSubmit` payload:
+
+```diff
+     void onSave({
+       transport_type: formState.transport_type,
+       leave_accommodation_time: toNullable(formState.leave_accommodation_time),
+       terminal: toNullable(formState.terminal),
+       company: toNullable(formState.company),
+       booking_number: toNullable(formState.booking_number),
+       booking_code: toNullable(formState.booking_code),
+       departure_time: toNullable(formState.departure_time),
++      arrival_time: toNullable(formState.arrival_time),
++      travel_days: Math.max(0, Math.trunc(Number(formState.travel_days) || 0)),
+     });
+```
+
+In the JSX grid, the `departure_time` field currently has `sm:col-span-2`. Remove that, then add `arrival_time` alongside it and `travel_days` in a new full-width row — mirroring the departure modal layout:
+
+```diff
+-             <div className="space-y-1 sm:col-span-2">
++             <div className="space-y-1">
+                <Label>{tTransport('departureTime')}</Label>
+                <Input
+                  disabled={isPending}
+                  onChange={(event) =>
+                    setFormState((previousState) => ({
+                      ...previousState,
+                      departure_time: event.target.value
+                    }))
+                  }
+                  type="time"
+                  value={formState.departure_time}
+                />
+              </div>
+
++             <div className="space-y-1">
++               <Label>{tTransport('arrivalTime')}</Label>
++               <Input
++                 disabled={isPending}
++                 onChange={(event) =>
++                   setFormState((previousState) => ({
++                     ...previousState,
++                     arrival_time: event.target.value
++                   }))
++                 }
++                 type="time"
++                 value={formState.arrival_time}
++               />
++             </div>
++
++             <div className="space-y-1 sm:col-span-2">
++               <Label>{tTransport('travelDays')}</Label>
++               <Input
++                 disabled={isPending}
++                 min={0}
++                 onChange={(event) =>
++                   setFormState((previousState) => ({
++                     ...previousState,
++                     travel_days: event.target.value
++                   }))
++                 }
++                 type="number"
++                 value={formState.travel_days}
++               />
++             </div>
+```
+
+**File: `src/components/trips/return-card.tsx`**
+
+Extend `hasTransportContent` to include `arrival_time`:
+
+```diff
+   return Boolean(
+     transport.transport_type !== 'plane' ||
+       transport.leave_accommodation_time ||
+       transport.terminal ||
+       transport.company ||
+       transport.booking_number ||
+       transport.booking_code ||
+-      transport.departure_time
++      transport.departure_time ||
++      transport.arrival_time
+   );
+```
+
+Extend `getTransportDetails` — add `arrival_time` after `departure_time`:
+
+```diff
+   if (transport.departure_time) {
+     details.push({
+       label: locale === 'es' ? 'Hora salida' : 'Departure time',
+       value: transport.departure_time
+     });
+   }
+
++  if (transport.arrival_time) {
++    details.push({
++      label: locale === 'es' ? 'Hora llegada' : 'Arrival time',
++      value: transport.arrival_time
++    });
++  }
+
+   return details;
+```
+
+In the card body, read `travel_days` from `localReturnTransport` and render the badge below the transport details — identical to how `departure-card.tsx` renders it (lines 216–222):
+
+```diff
++  const travelDays = localReturnTransport?.travel_days ?? 0;
+
+   // ... inside the hasTransport block, after the transportDetails list:
++  {travelDays > 0 ? (
++    <div className="mt-3">
++      <span className="inline-flex rounded-full bg-primary-100 px-2.5 py-0.5 text-xs font-semibold text-primary-700">
++        {tTrips('travelDaysBadge', { count: travelDays })}
++      </span>
++    </div>
++  ) : null}
+```
+
+### Acceptance Criteria
+
+- [ ] Open the return transport modal. It has Arrival time and Travel days fields.
+- [ ] Fill in an arrival time and travel days, save. Return card shows arrival time and the travel days badge.
+- [ ] Existing return transports with no arrival_time/travel_days render identically to before.
+- [ ] `npm run build` passes.
+
+### Task 1 Implementation Summary (Completed)
+
+**Scope implemented**
+
+- Updated `src/app/actions/trips.ts` (`updateReturnTransportAction`) input contract to include:
+  - `arrival_time: string | null`
+  - `travel_days: number`
+- Updated `src/components/trips/return-transport-modal.tsx`:
+  - Extended `ReturnTransportSubmitInput` and `ReturnTransportFormState` with `arrival_time` and `travel_days`.
+  - Extended `getInitialState` to hydrate `arrival_time` and `travel_days` from existing return transport data.
+  - Extended submit payload to include:
+    - `arrival_time` as nullable time value.
+    - `travel_days` normalized as a non-negative integer (`Math.max(0, Math.trunc(...))`).
+  - Updated modal form layout to parity with departure transport:
+    - `departure_time` and `arrival_time` side-by-side.
+    - `travel_days` on a full-width row.
+- Updated `src/components/trips/return-card.tsx`:
+  - Extended `hasTransportContent` to treat `arrival_time` and `travel_days > 0` as meaningful content.
+  - Extended `getTransportDetails` to render `arrival_time`.
+  - Added `travelDays` badge rendering using `tTrips('travelDaysBadge', { count })`, matching departure card behavior.
+
+**Validation performed**
+
+- Ran `npm run build` successfully (Next.js production build, type-check, and lint pass).
+- Build emitted one pre-existing lint warning in `src/components/layout/user-menu.tsx` (`@next/next/no-img-element`), unrelated to Task 1 changes.
+
+**Task 1 outcome**
+
+- Return transport now has parity with departure transport for `arrival_time` and `travel_days` in action input, modal editing, and card display.
+- Existing return transports without these values continue to render without regressions.
+
+---
+
+## Task 2: Schema, Types & DB Layer
+
+### Problem
+
+No `transport_legs` table, types, query functions, or server action exist. The `getTripById` query does not join legs, so legs are never returned to the UI layer.
+
+### Changes
+
+**New file: `supabase/migrations/YYYYMMDD_add_transport_legs.sql`**
+
+Use the SQL from the Spec Reference section exactly. Replace `YYYYMMDD` with the actual date at implementation time.
+
+**File: `src/types/database.ts`**
+
+Add after the `Transport` interface:
 
 ```typescript
-// New interface in src/types/database.ts:
 export interface TransportLeg {
   leg_id: number;
   transport_id: number;
@@ -45,47 +363,899 @@ export interface TransportLeg {
   booking_code: string | null;
   departure_time: string | null;
   arrival_time: string | null;
+  day_offset: number;
   terminal: string | null;
   created_at: string;
   updated_at: string;
 }
 
-// Extend existing Transport:
 export interface TransportWithLegs extends Transport {
   legs: TransportLeg[];
 }
 ```
 
-## UI Concept
+Update `TripWithRelations` to use `TransportWithLegs`:
 
-When a transport has legs, the transport section in DepartureCard (or any transport card) renders each leg as a sub-row:
-
-```
-Flight itinerary:
-  Leg 1: Buenos Aires -> Rio de Janeiro
-         AR1234 | Departs 13:00 | Arrives 17:00 | Terminal 2
-  Leg 2: Rio de Janeiro -> Panama City
-         CM456 | Departs 19:30 | Arrives 23:00 | Terminal 1
-  Leg 3: Panama City -> Cancun
-         CM789 | Departs 01:30 | Arrives 04:00 | Terminal 1
+```diff
+ export interface TripWithRelations extends Trip {
+   destinations: DestinationWithRelations[];
+-  departure_transport: Transport | null;
+-  return_transport: Transport | null;
++  departure_transport: TransportWithLegs | null;
++  return_transport: TransportWithLegs | null;
+ }
 ```
 
-The modal for editing transport would get a dynamic "legs" section with add/remove leg buttons, similar to how the destination list manages items.
+**File: `src/lib/db/queries/transports.ts`**
 
-## Scope
+Add the following four functions. Import `TransportLeg` and `TransportWithLegs` from `@/types/database`.
 
-Files to create/modify:
-- `supabase/migrations/YYYYMMDD_add_transport_legs.sql` (new)
-- `src/types/database.ts` (add `TransportLeg`, `TransportWithLegs`)
-- `src/lib/db/queries/transports.ts` (add `getTransportLegs`, `upsertTransportLegs`, `deleteTransportLeg`)
-- `src/lib/db/queries/trips.ts` (join transport_legs in `getTripById`)
-- `src/app/actions/trips.ts` (add `updateTransportLegsAction`)
-- `src/components/trips/departure-card.tsx` (render legs list)
-- `src/components/trips/return-card.tsx` (render legs list)
-- `src/components/trips/departure-transport-modal.tsx` (legs editor section)
-- `src/components/trips/return-transport-modal.tsx` (legs editor section)
-- i18n message files
+```typescript
+export type TransportLegInput = {
+  origin_city: string | null;
+  destination_city: string | null;
+  company: string | null;
+  booking_number: string | null;
+  booking_code: string | null;
+  departure_time: string | null;
+  arrival_time: string | null;
+  day_offset: number;
+  terminal: string | null;
+};
+
+// Returns all legs for a transport, ordered by position ascending.
+export async function getTransportLegs(transportId: number): Promise<TransportLeg[]> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from('transport_legs')
+    .select('*')
+    .eq('transport_id', transportId)
+    .order('position', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as TransportLeg[];
+}
+
+// Replaces all legs for a transport atomically.
+// Deletes existing legs, then inserts the provided array with positions 0..n-1.
+export async function upsertTransportLegs(
+  transportId: number,
+  legs: TransportLegInput[]
+): Promise<TransportLeg[]> {
+  const supabase = createAdminClient();
+
+  const { error: deleteError } = await supabase
+    .from('transport_legs')
+    .delete()
+    .eq('transport_id', transportId);
+
+  if (deleteError) throw deleteError;
+
+  if (legs.length === 0) return [];
+
+  const rows = legs.map((leg, index) => ({
+    transport_id: transportId,
+    position: index,
+    origin_city: normalizeOptionalText(leg.origin_city),
+    destination_city: normalizeOptionalText(leg.destination_city),
+    company: normalizeOptionalText(leg.company),
+    booking_number: normalizeOptionalText(leg.booking_number),
+    booking_code: normalizeOptionalText(leg.booking_code),
+    departure_time: normalizeOptionalTime(leg.departure_time),
+    arrival_time: normalizeOptionalTime(leg.arrival_time),
+    day_offset: Math.max(0, Math.trunc(leg.day_offset || 0)),
+    terminal: normalizeOptionalText(leg.terminal),
+  }));
+
+  const { data, error } = await supabase
+    .from('transport_legs')
+    .insert(rows)
+    .select();
+
+  if (error) throw error;
+  return (data ?? []) as TransportLeg[];
+}
+
+// Deletes one leg and renumbers all subsequent legs downward by 1.
+export async function deleteTransportLeg(legId: number, transportId: number): Promise<void> {
+  const supabase = createAdminClient();
+
+  // Get the position of the leg being deleted first.
+  const { data: legData, error: fetchError } = await supabase
+    .from('transport_legs')
+    .select('position')
+    .eq('leg_id', legId)
+    .single();
+
+  if (fetchError) throw fetchError;
+  const deletedPosition = (legData as { position: number }).position;
+
+  const { error: deleteError } = await supabase
+    .from('transport_legs')
+    .delete()
+    .eq('leg_id', legId);
+
+  if (deleteError) throw deleteError;
+
+  // Renumber: decrement position of all legs after the deleted one.
+  const { error: renumberError } = await supabase.rpc('decrement_leg_positions', {
+    p_transport_id: transportId,
+    p_after_position: deletedPosition,
+  });
+
+  if (renumberError) throw renumberError;
+}
+
+// Copies leg 0's fields back to the parent transport, then deletes all legs.
+// Used when reverting from multi-leg to single transport.
+export async function revertLegsToParent(transportId: number): Promise<Transport> {
+  const supabase = createAdminClient();
+
+  const { data: legData, error: legError } = await supabase
+    .from('transport_legs')
+    .select('*')
+    .eq('transport_id', transportId)
+    .eq('position', 0)
+    .single();
+
+  if (legError) throw legError;
+  const leg = legData as TransportLeg;
+
+  const { data: transportData, error: updateError } = await supabase
+    .from('transports')
+    .update({
+      company: leg.company,
+      booking_number: leg.booking_number,
+      booking_code: leg.booking_code,
+      departure_time: leg.departure_time,
+      arrival_time: leg.arrival_time,
+      terminal: leg.terminal,
+    })
+    .eq('transport_id', transportId)
+    .select()
+    .single();
+
+  if (updateError) throw updateError;
+
+  const { error: deleteError } = await supabase
+    .from('transport_legs')
+    .delete()
+    .eq('transport_id', transportId);
+
+  if (deleteError) throw deleteError;
+
+  return transportData as Transport;
+}
+```
+
+Add a Postgres helper function to the migration file for renumbering (used by `deleteTransportLeg`):
+
+```sql
+create or replace function decrement_leg_positions(p_transport_id bigint, p_after_position integer)
+returns void language sql as $$
+  update transport_legs
+  set position = position - 1
+  where transport_id = p_transport_id
+    and position > p_after_position;
+$$;
+```
+
+**File: `src/lib/db/queries/trips.ts`** — extend `getTripById` to join legs
+
+After fetching `departure_transport` and `return_transport`, fetch their legs and attach them:
+
+```typescript
+// After building the TripWithRelations object, enrich transports with legs:
+const transportIds = [
+  result.departure_transport?.transport_id,
+  result.return_transport?.transport_id,
+].filter((id): id is number => id !== undefined && id !== null);
+
+let legsMap: Record<number, TransportLeg[]> = {};
+if (transportIds.length > 0) {
+  const { data: legsData, error: legsError } = await supabase
+    .from('transport_legs')
+    .select('*')
+    .in('transport_id', transportIds)
+    .order('position', { ascending: true });
+
+  if (legsError) throw legsError;
+  for (const leg of (legsData ?? []) as TransportLeg[]) {
+    if (!legsMap[leg.transport_id]) legsMap[leg.transport_id] = [];
+    legsMap[leg.transport_id].push(leg);
+  }
+}
+
+if (result.departure_transport) {
+  (result.departure_transport as TransportWithLegs).legs =
+    legsMap[result.departure_transport.transport_id] ?? [];
+}
+if (result.return_transport) {
+  (result.return_transport as TransportWithLegs).legs =
+    legsMap[result.return_transport.transport_id] ?? [];
+}
+```
+
+Import `TransportLeg` and `TransportWithLegs` at the top of `trips.ts`.
+
+**File: `src/app/actions/trips.ts`** — add `updateTransportLegsAction`
+
+```typescript
+import { upsertTransportLegs, type TransportLegInput } from '@/lib/db/queries/transports';
+// (add to existing import)
+
+export async function updateTransportLegsAction(input: {
+  locale: string;
+  tripId: number;
+  transportId: number;
+  legs: TransportLegInput[];
+}): Promise<void> {
+  const { locale, tripId, transportId, legs } = input;
+
+  await requireUserId(locale);
+
+  if (!Number.isFinite(tripId) || !Number.isFinite(transportId)) {
+    throw new Error('Invalid trip or transport id.');
+  }
+
+  await upsertTransportLegs(transportId, legs);
+
+  revalidatePath(`/${locale}/trips/${tripId}`);
+}
+```
+
+Also add `revertLegsToParentAction`:
+
+```typescript
+import { revertLegsToParent } from '@/lib/db/queries/transports';
+
+export async function revertLegsToParentAction(input: {
+  locale: string;
+  tripId: number;
+  transportId: number;
+}): Promise<Transport> {
+  const { locale, tripId, transportId } = input;
+
+  await requireUserId(locale);
+
+  if (!Number.isFinite(tripId) || !Number.isFinite(transportId)) {
+    throw new Error('Invalid trip or transport id.');
+  }
+
+  const result = await revertLegsToParent(transportId);
+  revalidatePath(`/${locale}/trips/${tripId}`);
+  return result;
+}
+```
+
+### Acceptance Criteria
+
+- [ ] Migration runs without error against the local Supabase instance.
+- [ ] `TripWithRelations.departure_transport` and `return_transport` are typed as `TransportWithLegs | null`.
+- [ ] `getTripById` returns `legs: []` for transports that have no legs, and the correct sorted array for transports that do.
+- [ ] `upsertTransportLegs` with an empty array deletes all existing legs.
+- [ ] `deleteTransportLeg` renumbers: if positions were [0, 1, 2] and position 1 is deleted, remaining are [0, 1].
+- [ ] `revertLegsToParent` copies leg 0 fields to the parent transport and leaves no legs in the table.
+- [ ] `npm run build` passes (no type errors from the `TripWithRelations` change).
+
+### Task 2 Implementation Summary (Completed)
+
+**Scope implemented**
+
+- Added migration `supabase/migrations/202603010001_add_transport_legs.sql` with:
+  - New `transport_legs` table (identity PK, parent FK with cascade delete, contiguous `position`, `day_offset`, timestamps, and unique `(transport_id, position)`).
+  - Index `idx_transport_legs_transport_id`.
+  - Helper SQL function `decrement_leg_positions(p_transport_id, p_after_position)`.
+  - Update timestamp trigger `transport_legs_updated_at`.
+- Extended `src/types/database.ts` with:
+  - `TransportLeg` interface.
+  - `TransportWithLegs` interface (`Transport` + `legs: TransportLeg[]`).
+  - `TripWithRelations` now uses `departure_transport: TransportWithLegs | null` and `return_transport: TransportWithLegs | null`.
+- Extended `src/lib/db/queries/transports.ts` with:
+  - `TransportLegInput` type export.
+  - `getTransportLegs(transportId)` (sorted by `position ASC`).
+  - `upsertTransportLegs(transportId, legs)` (delete-all then insert with normalized fields and reindexed positions).
+  - `deleteTransportLeg(legId, transportId)` (delete + RPC renumber via `decrement_leg_positions`).
+  - `revertLegsToParent(transportId)` (copy leg 0 fields to parent transport, then delete all legs).
+- Extended `src/lib/db/queries/trips.ts`:
+  - `getTripById` now fetches all legs for departure/return transport IDs in one query and attaches sorted arrays.
+  - Guarantees `legs: []` when no legs exist.
+- Extended `src/lib/db/queries/shares.ts` similarly so shared-trip retrieval matches the updated `TripWithRelations` type and includes legs.
+- Extended `src/app/actions/trips.ts` with:
+  - `updateTransportLegsAction({ locale, tripId, transportId, legs })`.
+  - `revertLegsToParentAction({ locale, tripId, transportId })`.
+  - Both enforce auth, validate IDs, and revalidate `/${locale}/trips/${tripId}`.
+- Updated `src/lib/utils/__tests__/import-export.test.ts` fixture transport to include newly required `legs`, `arrival_time`, and `travel_days` properties for `TripWithRelations` compatibility.
+
+**Implementation notes**
+
+- The migration uses existing project convention `update_updated_at()` for `updated_at` trigger maintenance instead of `moddatetime(updated_at)`, which keeps behavior consistent with current schema/migrations.
+- `upsertTransportLegs` explicitly returns rows sorted by `position` to avoid relying on insert return order.
+- `deleteTransportLeg` scopes fetch/delete by both `leg_id` and `transport_id` for additional safety.
+
+**Validation performed**
+
+- Type and build validation performed with `npm run build` after Task 2 changes.
+
+---
+
+## Task 3: Computed Display Utilities
+
+### Problem
+
+No utilities exist for computing layover time, total journey duration, or formatting durations from leg data. These are needed by both departure and return cards before the UI can display meaningful timing information.
+
+### Changes
+
+**New file: `src/lib/utils/transport.ts`**
+
+```typescript
+import type { TransportLeg } from '@/types/database';
+
+// Convert "HH:MM" to total minutes from midnight.
+export function timeToMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// Compute minutes between leg N's arrival and leg N+1's departure.
+// day_offset is relative to the transport's departure date (0 = same day).
+export function computeLayoverMinutes(
+  arrivalTime: string,
+  arrivalDayOffset: number,
+  nextDepartureTime: string,
+  nextDepartureDayOffset: number
+): number {
+  const arrivalTotal = arrivalDayOffset * 24 * 60 + timeToMinutes(arrivalTime);
+  const departureTotal = nextDepartureDayOffset * 24 * 60 + timeToMinutes(nextDepartureTime);
+  return departureTotal - arrivalTotal;
+}
+
+// Format a minute count as "Xh Ym", "Xh", or "Ym".
+export function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
+// Compute total journey minutes from first departure to last arrival.
+// Returns null if any required time field is missing.
+export function computeTotalJourneyMinutes(legs: TransportLeg[]): number | null {
+  if (legs.length === 0) return null;
+  const first = legs[0];
+  const last = legs[legs.length - 1];
+  if (!first.departure_time || !last.arrival_time) return null;
+  return computeLayoverMinutes(
+    first.departure_time,
+    0,
+    last.arrival_time,
+    last.day_offset
+  );
+}
+```
+
+**New file: `src/lib/utils/__tests__/transport.test.ts`**
+
+```typescript
+import { describe, expect, it } from 'vitest';
+import {
+  computeLayoverMinutes,
+  computeTotalJourneyMinutes,
+  formatDuration,
+  timeToMinutes,
+} from '../transport';
+import type { TransportLeg } from '@/types/database';
+
+describe('timeToMinutes', () => {
+  it('converts midnight', () => expect(timeToMinutes('00:00')).toBe(0));
+  it('converts noon', () => expect(timeToMinutes('12:00')).toBe(720));
+  it('converts 13:45', () => expect(timeToMinutes('13:45')).toBe(825));
+});
+
+describe('computeLayoverMinutes', () => {
+  it('same-day connection', () => {
+    expect(computeLayoverMinutes('17:00', 0, '19:30', 0)).toBe(150);
+  });
+
+  it('overnight arrival into next-day departure', () => {
+    // Arrives 23:00, departs 01:30 next day
+    expect(computeLayoverMinutes('23:00', 0, '01:30', 1)).toBe(150);
+  });
+
+  it('returns negative for inverted times (invalid data)', () => {
+    expect(computeLayoverMinutes('19:30', 0, '17:00', 0)).toBe(-150);
+  });
+});
+
+describe('formatDuration', () => {
+  it('formats hours only', () => expect(formatDuration(120)).toBe('2h'));
+  it('formats minutes only', () => expect(formatDuration(45)).toBe('45m'));
+  it('formats hours and minutes', () => expect(formatDuration(155)).toBe('2h 35m'));
+});
+
+describe('computeTotalJourneyMinutes', () => {
+  const makeLeg = (overrides: Partial<TransportLeg>): TransportLeg => ({
+    leg_id: 1, transport_id: 1, position: 0,
+    origin_city: null, destination_city: null, company: null,
+    booking_number: null, booking_code: null, terminal: null,
+    departure_time: null, arrival_time: null, day_offset: 0,
+    created_at: '', updated_at: '',
+    ...overrides,
+  });
+
+  it('returns null for empty legs', () => {
+    expect(computeTotalJourneyMinutes([])).toBeNull();
+  });
+
+  it('returns null when times are missing', () => {
+    expect(computeTotalJourneyMinutes([makeLeg({ position: 0 })])).toBeNull();
+  });
+
+  it('computes single-leg journey', () => {
+    const legs = [makeLeg({ departure_time: '13:00', arrival_time: '17:00', day_offset: 0 })];
+    expect(computeTotalJourneyMinutes(legs)).toBe(240);
+  });
+
+  it('computes multi-leg journey spanning overnight', () => {
+    const legs = [
+      makeLeg({ position: 0, departure_time: '13:00', arrival_time: '17:00', day_offset: 0 }),
+      makeLeg({ position: 1, departure_time: '23:00', arrival_time: '03:00', day_offset: 1 }),
+    ];
+    // 13:00 to 03:00 next day = 14h = 840 min
+    expect(computeTotalJourneyMinutes(legs)).toBe(840);
+  });
+});
+```
+
+### Acceptance Criteria
+
+- [ ] All tests in `transport.test.ts` pass.
+- [ ] `npm run build` passes (no import errors).
+
+### Task 3 Implementation Summary (Completed)
+
+**Scope implemented**
+
+- Added `src/lib/utils/transport.ts` with the four Task 3 utilities:
+  - `timeToMinutes(time)` for `"HH:MM"` to minute conversion.
+  - `computeLayoverMinutes(arrivalTime, arrivalDayOffset, nextDepartureTime, nextDepartureDayOffset)` for leg-to-leg minute deltas using day offsets.
+  - `formatDuration(minutes)` for compact `h/m` formatting (`2h`, `45m`, `2h 35m`).
+  - `computeTotalJourneyMinutes(legs)` for first-departure to last-arrival total duration, returning `null` when required times are missing.
+- Added `src/lib/utils/__tests__/transport.test.ts` with unit coverage for:
+  - Time conversion (`00:00`, `12:00`, `13:45`).
+  - Layover calculation (same-day, overnight, and negative/inverted validation case).
+  - Duration formatting variants (hours-only, minutes-only, mixed).
+  - Total journey computation (empty legs, missing times, single-leg, and overnight multi-leg scenarios).
+
+**Validation performed**
+
+- `npm run build` passes successfully with no Task 3 type/import regressions.
+- `npx vitest run src/lib/utils/__tests__/transport.test.ts` could not be executed in this environment due restricted network access preventing npm from resolving `vitest` (`ENOTFOUND registry.npmjs.org`).
+
+**Task 3 outcome**
+
+- The transport timing computation layer needed by Tasks 4 and 5 is now implemented and covered by tests in the repository.
+
+---
+
+## Task 4: Departure Legs — Modal + Card
+
+### Problem
+
+The departure transport modal has no legs editor. The departure card always renders parent-level transport fields, never legs. This task wires up the full multi-leg UI for departure.
+
+### Changes
+
+**File: `src/types/database.ts`** — export `TransportLegInput` from the queries layer or redefine here for the UI layer. The UI needs a form-state type and a submit type. No new DB types needed beyond Task 2.
+
+**File: `src/components/trips/departure-transport-modal.tsx`**
+
+Extend props to receive existing legs and the hint city strings:
+
+```diff
+ type DepartureTransportModalProps = {
+   locale: string;
+   tripId: number;
+   transport: Transport | null;
++  legs: TransportLeg[];
++  departureCityHint: string | null;
++  nextDestinationHint: string | null;
+   open: boolean;
+   isPending: boolean;
+   onCancel: () => void;
+-  onSave: (payload: DepartureTransportSubmitInput) => void | Promise<void>;
++  onSave: (payload: DepartureTransportSubmitInput, legs: LegFormState[]) => void | Promise<void>;
+ };
+```
+
+Add leg-specific form state type:
+
+```typescript
+type LegFormState = {
+  origin_city: string;
+  destination_city: string;
+  company: string;
+  booking_number: string;
+  booking_code: string;
+  departure_time: string;
+  arrival_time: string;
+  day_offset: string;
+  terminal: string;
+};
+
+function legToFormState(leg: TransportLeg): LegFormState {
+  return {
+    origin_city: leg.origin_city ?? '',
+    destination_city: leg.destination_city ?? '',
+    company: leg.company ?? '',
+    booking_number: leg.booking_number ?? '',
+    booking_code: leg.booking_code ?? '',
+    departure_time: leg.departure_time ?? '',
+    arrival_time: leg.arrival_time ?? '',
+    day_offset: String(leg.day_offset),
+    terminal: leg.terminal ?? '',
+  };
+}
+
+function emptyLeg(previousLeg?: LegFormState): LegFormState {
+  return {
+    origin_city: previousLeg?.destination_city ?? '',
+    destination_city: '',
+    company: '',
+    booking_number: '',
+    booking_code: '',
+    departure_time: '',
+    arrival_time: '',
+    day_offset: '0',
+    terminal: '',
+  };
+}
+```
+
+Add `legs` state alongside `formState`:
+
+```typescript
+const [legForms, setLegForms] = useState<LegFormState[]>(() => legs.map(legToFormState));
+
+useEffect(() => {
+  if (!open) return;
+  setFormState(getInitialState(transport));
+  setLegForms(legs.map(legToFormState));
+}, [transport, legs, open]);
+```
+
+Add leg handlers:
+
+```typescript
+const handleAddLeg = () => {
+  setLegForms((prev) => [...prev, emptyLeg(prev[prev.length - 1])]);
+};
+
+const handleRemoveLeg = (index: number) => {
+  setLegForms((prev) => prev.filter((_, i) => i !== index));
+};
+
+const handleLegChange = (index: number, field: keyof LegFormState, value: string) => {
+  setLegForms((prev) =>
+    prev.map((leg, i) => (i === index ? { ...leg, [field]: value } : leg))
+  );
+};
+
+const handleRevertToSingle = () => {
+  // Copy leg 0 fields back into the parent form state, clear legs.
+  if (legForms.length === 1) {
+    const leg = legForms[0];
+    setFormState((prev) => ({
+      ...prev,
+      company: leg.company,
+      booking_number: leg.booking_number,
+      booking_code: leg.booking_code,
+      departure_time: leg.departure_time,
+      arrival_time: leg.arrival_time,
+      terminal: leg.terminal,
+    }));
+    setLegForms([]);
+  }
+};
+```
+
+Extend `handleSubmit` to pass `legForms` to `onSave`:
+
+```diff
+-  void onSave({ transport_type: ..., ... });
++  void onSave({ transport_type: ..., ... }, legForms);
+```
+
+Add a "Legs" section to the modal JSX, below the existing transport fields section. Render it conditionally:
+
+- When `legForms.length === 0`: show only an "Add leg" button.
+- When `legForms.length >= 1`: render each leg as a card with all its fields, a "Remove" button (disabled when `legForms.length === 1`), and below the list: "Add leg" button + (when `legForms.length === 1`) a "Revert to single transport" link/button.
+
+Each leg card header shows "Leg N" (1-indexed). Fields per leg: origin city, destination city, company, booking number, booking code, departure time, arrival time, day offset (`+N days` label), terminal.
+
+Soft hints:
+- After the `origin_city` input of leg 0: if `legForms[0].origin_city !== '' && departureCityHint && legForms[0].origin_city !== departureCityHint`, show `<p className="text-xs text-amber-600">Doesn't match your departure city.</p>`
+- After the `destination_city` input of the last leg: same check against `nextDestinationHint`.
+
+**File: `src/components/trips/departure-card.tsx`**
+
+Extend props and local state:
+
+```diff
+ type DepartureCardProps = {
+   locale: string;
+   tripId: number;
+   departureCity: string;
+   startDate: string | null;
+-  departureTransport: Transport | null;
++  departureTransport: TransportWithLegs | null;
++  nextDestinationCity: string | null;
+ };
+```
+
+Add local legs state (mirroring the existing `localDepartureTransport` pattern):
+
+```typescript
+const [localLegs, setLocalLegs] = useState<TransportLeg[]>(
+  departureTransport?.legs ?? []
+);
+
+useEffect(() => {
+  setLocalLegs(departureTransport?.legs ?? []);
+}, [departureTransport]);
+```
+
+Update `handleSave` to handle both parent transport and legs:
+
+```typescript
+const handleSave = (payload: DepartureTransportSubmitInput, legForms: LegFormState[]) => {
+  setErrorMessage(null);
+
+  startTransition(async () => {
+    try {
+      const updatedTransport = await updateDepartureTransportAction({
+        locale, tripId, transport: payload,
+      });
+
+      const legInputs = legForms.map((leg) => ({
+        origin_city: leg.origin_city || null,
+        destination_city: leg.destination_city || null,
+        company: leg.company || null,
+        booking_number: leg.booking_number || null,
+        booking_code: leg.booking_code || null,
+        departure_time: leg.departure_time || null,
+        arrival_time: leg.arrival_time || null,
+        day_offset: Math.max(0, Math.trunc(Number(leg.day_offset) || 0)),
+        terminal: leg.terminal || null,
+      }));
+
+      await updateTransportLegsAction({
+        locale, tripId,
+        transportId: updatedTransport.transport_id,
+        legs: legInputs,
+      });
+
+      setLocalDepartureTransport(updatedTransport);
+      setLocalLegs(legInputs.length >= 2 ? (/* result from action — see note */) : []);
+      setIsModalOpen(false);
+    } catch {
+      setErrorMessage(/* existing error message */);
+    }
+  });
+};
+```
+
+Note: `updateTransportLegsAction` currently returns `void`. If the card needs the saved legs back (for local state), either change the action to return `TransportLeg[]`, or re-fetch from the server via `router.refresh()`. The simpler approach is to have the action return the upserted legs and update local state directly — update the action return type to `Promise<TransportLeg[]>` if this is the chosen approach.
+
+Update the card JSX to conditionally render legs vs. parent transport. When `localLegs.length >= 2`, replace the existing transport details block with a legs list. Import and use the utilities from Task 3. Follow the display rules from the Spec Reference section (collapse at 3+, layover times, total duration, day offset labels).
+
+Pass new props to `DepartureTransportModal`:
+
+```diff
+ <DepartureTransportModal
++  legs={localLegs}
++  departureCityHint={departureCity}
++  nextDestinationHint={nextDestinationCity}
+   ...existingProps
+ />
+```
+
+**File: wherever `DepartureCard` is rendered (trip page)** — pass `nextDestinationCity`:
+
+```diff
+ <DepartureCard
+   departureCity={trip.departure_city}
+   departureTransport={trip.departure_transport}
++  nextDestinationCity={trip.destinations[0]?.city ?? null}
+   ...
+ />
+```
+
+**i18n message files** — add new keys (both `en.json` and `es.json`):
+
+```json
+"transport": {
+  "addLeg": "Add leg",
+  "removeLeg": "Remove leg",
+  "revertToSingle": "Revert to single transport",
+  "legN": "Leg {n}",
+  "flightItinerary": "Flight itinerary",
+  "connection": "{duration} connection",
+  "tightConnection": "{duration} connection (tight)",
+  "totalJourney": "Total journey: ~{duration}",
+  "dayOffset": "+{n} day",
+  "departureCityHint": "Doesn't match your departure city.",
+  "nextDestinationHint": "Doesn't match your next destination."
+}
+```
+
+### Acceptance Criteria
+
+- [ ] No legs: departure card renders transport fields as before (no regression).
+- [ ] Click "Add leg" in the modal: a "Leg 1" card appears. The parent transport fields section stays visible.
+- [ ] Click "Add leg" again: "Leg 2" appears. `origin_city` of Leg 2 is pre-filled with Leg 1's `destination_city`.
+- [ ] With 2 legs: save the modal. The departure card renders the legs list, not parent transport fields.
+- [ ] With 3+ legs: the legs list starts collapsed. Click to expand.
+- [ ] Layover time is shown between legs. A connection under 60 min is amber.
+- [ ] Total journey duration is shown at the bottom.
+- [ ] `(+1 day)` label appears next to arrival time when `day_offset = 1`.
+- [ ] First leg `origin_city` mismatch with departure city shows the hint.
+- [ ] Last leg `destination_city` mismatch with next destination shows the hint.
+- [ ] With exactly 1 leg: "Remove" button is disabled. "Revert to single transport" is visible.
+- [ ] Revert: leg 0 fields populate back into parent transport fields. Card renders parent fields.
+- [ ] `npm run build` passes.
+
+### Task 4 Implementation Summary (Completed)
+
+**Scope implemented**
+
+- Updated `src/types/database.ts` with `TransportLegInput` so the UI/action layer can share a typed legs payload shape without relying on query-layer-only types.
+- Updated `src/app/actions/trips.ts`:
+  - `updateTransportLegsAction` now returns `Promise<TransportLeg[]>` from `upsertTransportLegs(...)`.
+  - Action input now uses shared `TransportLegInput` from `src/types/database.ts`.
+- Rebuilt `src/components/trips/departure-transport-modal.tsx` for full legs editing:
+  - Extended props with `legs`, `departureCityHint`, `nextDestinationHint`, and `onSave(payload, legs)`.
+  - Added `LegFormState`, `legToFormState`, and `emptyLeg`.
+  - Added legs state + reset-on-open behavior alongside parent transport form state.
+  - Added leg handlers (`add`, `remove`, `change`, `revert to single`).
+  - Implemented single→multi prefill rule: adding the first leg copies parent fields (`company`, reservation fields, times, terminal) into leg 1.
+  - Added soft hints:
+    - First leg `origin_city` mismatch with departure city.
+    - Last leg `destination_city` mismatch with next destination city.
+  - Enforced single-leg transient rule on submit: when exactly one leg exists, leg fields are folded into parent transport payload and legs are submitted as `[]`.
+- Rebuilt `src/components/trips/departure-card.tsx` for multi-leg rendering:
+  - Prop updated to `departureTransport: TransportWithLegs | null`.
+  - Added `nextDestinationCity` prop.
+  - Added local legs state synced from server data.
+  - Updated save flow to call both `updateDepartureTransportAction` and `updateTransportLegsAction`.
+  - Added single-leg normalization safeguard in card save flow as defense-in-depth.
+  - Added conditional display:
+    - `localLegs.length >= 2` renders flight itinerary instead of parent transport fields.
+    - 3+ legs default to collapsed, with expand/collapse toggle.
+    - Layover connection line rendered between legs from Task 3 utilities.
+    - Layover under 60 minutes highlighted in amber.
+    - Total journey duration shown from first departure to last arrival.
+    - `(+N day)` label shown when `day_offset > 0`.
+  - Preserved existing parent transport rendering path for 0 legs.
+- Updated `src/components/trips/destination-list.tsx`:
+  - `departureTransport` prop now typed as `TransportWithLegs | null`.
+  - `DepartureCard` now receives `nextDestinationCity={items[0]?.city ?? null}`.
+- Updated i18n in `src/messages/en.json` and `src/messages/es.json` with Task 4 transport keys:
+  - `addLeg`, `removeLeg`, `revertToSingle`, `legN`, `flightItinerary`, `connection`, `tightConnection`, `totalJourney`, `dayOffset`, `departureCityHint`, `nextDestinationHint`.
+
+**Validation performed**
+
+- Ran `npm run build` successfully after Task 4 changes (compile, lint, type-check, and route build all pass).
+- Build reported one pre-existing warning in `src/components/layout/user-menu.tsx` (`@next/next/no-img-element`), unrelated to Task 4.
+
+**Task 4 outcome**
+
+- Departure transport now supports full multi-leg authoring in the modal and multi-leg itinerary rendering in the card, including collapse behavior, layover/total-duration computations, day-offset labeling, city mismatch hints, and single-leg normalization back to parent transport.
+
+---
+
+## Task 5: Return Legs — Modal + Card
+
+### Problem
+
+Return transport has no legs editor or legs display. This task applies the same changes as Task 4 to the return transport, using Task 1 (parity fields) and Task 4 (established patterns) as the foundation.
+
+### Dependency
+
+Requires Task 1 (return transport parity) and Task 4 (departure legs, establishes patterns) to be complete.
+
+### Changes
+
+**File: `src/components/trips/return-transport-modal.tsx`**
+
+Apply the same structural changes as Task 4 applied to `departure-transport-modal.tsx`:
+
+- Extend props: add `legs: TransportLeg[]`, `previousDestinationHint: string | null` (for last leg destination hint — the return trip's previous city is the last destination before returning).
+- Add `LegFormState`, `legToFormState`, `emptyLeg` (identical to departure modal).
+- Add `legForms` state, reset in `useEffect`.
+- Add `handleAddLeg`, `handleRemoveLeg`, `handleLegChange`, `handleRevertToSingle`.
+- Extend `onSave` signature to include `legForms`.
+- Add legs section to JSX.
+- Soft hints: last leg's `destination_city` vs. `previousDestinationHint` (note: for return transport, the "next destination" concept is the return city, not a stopover city — hint text: "Doesn't match your return city.").
+
+**File: `src/components/trips/return-card.tsx`**
+
+Apply the same structural changes as Task 4 applied to `departure-card.tsx`:
+
+- Extend props: change `returnTransport: Transport | null` to `returnTransport: TransportWithLegs | null`, add `previousDestinationCity: string | null`.
+- Add `localLegs` state.
+- Update `handleSave` to call both `updateReturnTransportAction` and `updateTransportLegsAction`.
+- Conditionally render legs list vs. parent transport fields.
+- Pass `legs`, `previousDestinationHint` (the return city: `trip.return_city`) to the modal.
+
+**File: wherever `ReturnCard` is rendered (trip page)** — pass `previousDestinationCity`:
+
+```diff
+ <ReturnCard
+   returnCity={trip.return_city ?? ''}
+   returnTransport={trip.return_transport}
++  previousDestinationCity={trip.destinations[trip.destinations.length - 1]?.city ?? null}
+   ...
+ />
+```
+
+**i18n message files** — add `returnCityHint` key if needed (or reuse `nextDestinationHint` with updated copy).
+
+### Acceptance Criteria
+
+- [ ] All Task 4 acceptance criteria apply symmetrically to return transport.
+- [ ] Return card with 2+ legs: renders legs list, not parent transport fields.
+- [ ] Return card with 0 legs: renders parent transport fields (including arrival_time and travel_days from Task 1 — no regression).
+- [ ] Revert to single: leg 0 fields populate back to parent return transport. Card renders parent fields.
+- [ ] `npm run build` passes.
+
+### Task 5 Implementation Summary (Completed)
+
+**Scope implemented**
+
+- Rebuilt `src/components/trips/return-transport-modal.tsx` with full legs editing support:
+  - Extended modal props with `legs`, `previousDestinationHint`, `returnCityHint`, and `onSave(payload, legs)`.
+  - Added `LegFormState`, `legToFormState`, and `emptyLeg`.
+  - Added legs state lifecycle (`useState` + reset on open) in sync with parent transport form.
+  - Added leg handlers: `handleAddLeg`, `handleRemoveLeg`, `handleLegChange`, and `handleRevertToSingle`.
+  - Implemented single-leg normalization on submit: when exactly one leg exists, leg 0 fields are folded into parent transport payload and legs are submitted as `[]`.
+  - Added soft hints:
+    - First leg origin mismatch vs previous destination city (`previousDestinationHint`).
+    - Last leg destination mismatch vs return city (`returnCityHint`).
+- Rebuilt `src/components/trips/return-card.tsx` to match the departure legs architecture:
+  - Updated prop type to `returnTransport: TransportWithLegs | null`.
+  - Added `previousDestinationCity` prop.
+  - Added local legs state (`localLegs`) and collapsed-state behavior (`3+` legs collapsed by default).
+  - Updated save flow to call both:
+    - `updateReturnTransportAction(...)` for parent transport.
+    - `updateTransportLegsAction(...)` for leg persistence.
+  - Added single-leg normalization safeguard in card save flow (defense-in-depth).
+  - Added conditional UI rendering:
+    - `legs.length >= 2`: itinerary list with collapse toggle, layovers, day-offset labels, and total journey duration.
+    - `legs.length === 0`: existing parent transport details path remains active (including `arrival_time` and `travel_days` badge).
+- Updated `src/components/trips/destination-list.tsx`:
+  - `returnTransport` prop now typed as `TransportWithLegs | null`.
+  - `ReturnCard` now receives `previousDestinationCity={items[items.length - 1]?.city ?? null}`.
+- Updated i18n keys in `src/messages/en.json` and `src/messages/es.json`:
+  - Added `previousDestinationHint`.
+  - Added `returnCityHint`.
+
+**Validation performed**
+
+- Ran `npm run build` after Task 5 implementation; compile/type/lint/build completed successfully.
+- Existing unrelated warning remains in `src/components/layout/user-menu.tsx` (`@next/next/no-img-element`).
+
+**Task 5 outcome**
+
+- Return transport now supports end-to-end multi-leg authoring and rendering parity with departure transport, while preserving the single-transport display path when no legs are stored.
+
+---
 
 ## Dependencies
 
-- Requires Phase 1 to be complete (transport model already extended with `arrival_time` and `travel_days`)
+- Task 1 has no dependencies within this phase.
+- Tasks 2 and 3 can run in parallel. Both must complete before Tasks 4 and 5.
+- Task 4 requires Tasks 2 and 3.
+- Task 5 requires Tasks 1, 2, 3, and 4.

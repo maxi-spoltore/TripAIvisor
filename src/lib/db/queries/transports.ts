@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
-import type { Transport, TransportRole, TransportType } from '@/types/database';
+import type { Transport, TransportLeg, TransportRole, TransportType } from '@/types/database';
 
 const NOT_FOUND_ERROR_CODE = 'PGRST116';
 
@@ -22,6 +22,18 @@ type TransportContext = {
   destinationId: number | null;
   tripId: number | null;
   role: TransportRole;
+};
+
+export type TransportLegInput = {
+  origin_city: string | null;
+  destination_city: string | null;
+  company: string | null;
+  booking_number: string | null;
+  booking_code: string | null;
+  departure_time: string | null;
+  arrival_time: string | null;
+  day_offset: number;
+  terminal: string | null;
 };
 
 function isNotFoundError(error: { code?: string } | null): boolean {
@@ -260,4 +272,148 @@ export async function upsertTransport(input: TransportUpsertInput): Promise<Tran
   }
 
   return data as Transport;
+}
+
+export async function getTransportLegs(transportId: number): Promise<TransportLeg[]> {
+  if (!isValidId(transportId)) {
+    throw new Error('transportId must be a positive number.');
+  }
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from('transport_legs')
+    .select('*')
+    .eq('transport_id', transportId)
+    .order('position', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as TransportLeg[];
+}
+
+export async function upsertTransportLegs(transportId: number, legs: TransportLegInput[]): Promise<TransportLeg[]> {
+  if (!isValidId(transportId)) {
+    throw new Error('transportId must be a positive number.');
+  }
+
+  const supabase = createAdminClient();
+
+  const { error: deleteError } = await supabase.from('transport_legs').delete().eq('transport_id', transportId);
+
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  if (legs.length === 0) {
+    return [];
+  }
+
+  const rows = legs.map((leg, index) => ({
+    transport_id: transportId,
+    position: index,
+    origin_city: normalizeOptionalText(leg.origin_city) ?? null,
+    destination_city: normalizeOptionalText(leg.destination_city) ?? null,
+    company: normalizeOptionalText(leg.company) ?? null,
+    booking_number: normalizeOptionalText(leg.booking_number) ?? null,
+    booking_code: normalizeOptionalText(leg.booking_code) ?? null,
+    departure_time: normalizeOptionalTime(leg.departure_time) ?? null,
+    arrival_time: normalizeOptionalTime(leg.arrival_time) ?? null,
+    day_offset: Math.max(0, Math.trunc(Number(leg.day_offset) || 0)),
+    terminal: normalizeOptionalText(leg.terminal) ?? null
+  }));
+
+  const { data, error } = await supabase.from('transport_legs').insert(rows).select('*');
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as TransportLeg[]).sort((a, b) => a.position - b.position);
+}
+
+export async function deleteTransportLeg(legId: number, transportId: number): Promise<void> {
+  if (!isValidId(legId) || !isValidId(transportId)) {
+    throw new Error('legId and transportId must be positive numbers.');
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: legData, error: fetchError } = await supabase
+    .from('transport_legs')
+    .select('position')
+    .eq('leg_id', legId)
+    .eq('transport_id', transportId)
+    .single();
+
+  if (fetchError) {
+    throw fetchError;
+  }
+
+  const deletedPosition = (legData as { position: number }).position;
+
+  const { error: deleteError } = await supabase
+    .from('transport_legs')
+    .delete()
+    .eq('leg_id', legId)
+    .eq('transport_id', transportId);
+
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  const { error: renumberError } = await supabase.rpc('decrement_leg_positions', {
+    p_transport_id: transportId,
+    p_after_position: deletedPosition
+  });
+
+  if (renumberError) {
+    throw renumberError;
+  }
+}
+
+export async function revertLegsToParent(transportId: number): Promise<Transport> {
+  if (!isValidId(transportId)) {
+    throw new Error('transportId must be a positive number.');
+  }
+
+  const supabase = createAdminClient();
+  const { data: legData, error: legError } = await supabase
+    .from('transport_legs')
+    .select('*')
+    .eq('transport_id', transportId)
+    .eq('position', 0)
+    .single();
+
+  if (legError) {
+    throw legError;
+  }
+
+  const leg = legData as TransportLeg;
+
+  const { data: transportData, error: updateError } = await supabase
+    .from('transports')
+    .update({
+      company: leg.company,
+      booking_number: leg.booking_number,
+      booking_code: leg.booking_code,
+      departure_time: leg.departure_time,
+      arrival_time: leg.arrival_time,
+      terminal: leg.terminal
+    })
+    .eq('transport_id', transportId)
+    .select('*')
+    .single();
+
+  if (updateError) {
+    throw updateError;
+  }
+
+  const { error: deleteError } = await supabase.from('transport_legs').delete().eq('transport_id', transportId);
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  return transportData as Transport;
 }

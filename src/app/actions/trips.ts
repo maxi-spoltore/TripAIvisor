@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { upsertAccommodation } from '@/lib/db/queries/accommodations';
 import { createDestination, updateDestination } from '@/lib/db/queries/destinations';
-import { upsertTransport } from '@/lib/db/queries/transports';
+import { revertLegsToParent, upsertTransport, upsertTransportLegs } from '@/lib/db/queries/transports';
 import { createTrip, deleteTrip, updateTrip } from '@/lib/db/queries/trips';
 import {
   type ExportedAccommodation,
@@ -14,7 +14,7 @@ import {
   type ExportedTransport,
   validateImportData
 } from '@/lib/utils/import-export';
-import type { Transport, TransportType } from '@/types/database';
+import type { Transport, TransportLeg, TransportLegInput, TransportType } from '@/types/database';
 
 type SessionUser = {
   user?: {
@@ -229,6 +229,8 @@ export async function updateReturnTransportAction(input: {
     booking_number: string | null;
     booking_code: string | null;
     departure_time: string | null;
+    arrival_time: string | null;
+    travel_days: number;
   };
 }): Promise<Transport> {
   const { locale, tripId, transport } = input;
@@ -280,6 +282,43 @@ export async function updateDepartureTransportAction(input: {
 
   revalidatePath(`/${locale}/trips/${tripId}`);
   return result;
+}
+
+export async function updateTransportLegsAction(input: {
+  locale: string;
+  tripId: number;
+  transportId: number;
+  legs: TransportLegInput[];
+}): Promise<TransportLeg[]> {
+  const { locale, tripId, transportId, legs } = input;
+
+  await requireUserId(locale);
+
+  if (!Number.isFinite(tripId) || !Number.isFinite(transportId)) {
+    throw new Error('Invalid trip or transport id.');
+  }
+
+  const result = await upsertTransportLegs(transportId, legs);
+  revalidatePath(`/${locale}/trips/${tripId}`);
+  return result;
+}
+
+export async function revertLegsToParentAction(input: {
+  locale: string;
+  tripId: number;
+  transportId: number;
+}): Promise<Transport> {
+  const { locale, tripId, transportId } = input;
+
+  await requireUserId(locale);
+
+  if (!Number.isFinite(tripId) || !Number.isFinite(transportId)) {
+    throw new Error('Invalid trip or transport id.');
+  }
+
+  const transport = await revertLegsToParent(transportId);
+  revalidatePath(`/${locale}/trips/${tripId}`);
+  return transport;
 }
 
 export async function importTripFromDataAction(input: {

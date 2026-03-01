@@ -25,8 +25,11 @@ describe('Import/export utilities', () => {
         booking_number: 'AB123',
         booking_code: 'XYZ',
         departure_time: '10:00',
+        arrival_time: null,
+        travel_days: 0,
         created_at: '2026-02-03T00:00:00.000Z',
-        updated_at: '2026-02-03T00:00:00.000Z'
+        updated_at: '2026-02-03T00:00:00.000Z',
+        legs: []
       },
       return_transport: null,
       destinations: [

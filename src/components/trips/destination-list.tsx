@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
-import type { DestinationWithRelations, Transport } from '@/types/database';
+import type { DestinationWithRelations, TransportWithLegs } from '@/types/database';
 import { DepartureCard } from './departure-card';
 import { DestinationCard } from './destination-card';
 import { DestinationModal, type DestinationModalSubmitInput } from './destination-modal';
@@ -33,11 +33,11 @@ type DestinationListProps = {
   destinations: DestinationWithRelations[];
   startDate: string | null;
   departureCity?: string;
-  departureTransport?: Transport | null;
+  departureTransport?: TransportWithLegs | null;
   travelDays?: number;
   returnCity?: string;
   returnDate?: string | null;
-  returnTransport?: Transport | null;
+  returnTransport?: TransportWithLegs | null;
 };
 
 function sortByPosition(destinations: DestinationWithRelations[]): DestinationWithRelations[] {
@@ -398,6 +398,7 @@ export function DestinationList({
                   departureCity={departureCity}
                   departureTransport={departureTransport ?? null}
                   locale={locale}
+                  nextDestinationCity={items[0]?.city ?? null}
                   startDate={startDate}
                   tripId={tripId}
                 />
@@ -471,6 +472,7 @@ export function DestinationList({
               <div className="flex-1">
                 <ReturnCard
                   locale={locale}
+                  previousDestinationCity={items[items.length - 1]?.city ?? null}
                   returnCity={returnCity}
                   returnDate={returnDate ?? null}
                   returnTransport={returnTransport ?? null}

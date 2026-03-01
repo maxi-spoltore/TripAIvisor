@@ -77,7 +77,20 @@
     "bookingCode": "Booking code",
     "departureTime": "Departure time",
     "arrivalTime": "Arrival time",
-    "travelDays": "Travel days"
+    "travelDays": "Travel days",
+    "addLeg": "Add leg",
+    "removeLeg": "Remove leg",
+    "revertToSingle": "Revert to single transport",
+    "legN": "Leg {n}",
+    "flightItinerary": "Flight itinerary",
+    "connection": "{duration} connection",
+    "tightConnection": "{duration} connection (tight)",
+    "totalJourney": "Total journey: ~{duration}",
+    "dayOffset": "+{n} day",
+    "departureCityHint": "Doesn't match your departure city.",
+    "nextDestinationHint": "Doesn't match your next destination.",
+    "previousDestinationHint": "Doesn't match your previous destination.",
+    "returnCityHint": "Doesn't match your return city."
   },
   "accommodation": {
     "title": "Accommodation",

@@ -77,7 +77,20 @@
     "bookingCode": "Código de reserva",
     "departureTime": "Hora de salida",
     "arrivalTime": "Hora de llegada",
-    "travelDays": "Días de viaje"
+    "travelDays": "Días de viaje",
+    "addLeg": "Agregar tramo",
+    "removeLeg": "Quitar tramo",
+    "revertToSingle": "Volver a transporte único",
+    "legN": "Tramo {n}",
+    "flightItinerary": "Itinerario de vuelo",
+    "connection": "Conexión de {duration}",
+    "tightConnection": "Conexión de {duration} (justa)",
+    "totalJourney": "Trayecto total: ~{duration}",
+    "dayOffset": "+{n} día",
+    "departureCityHint": "No coincide con tu ciudad de salida.",
+    "nextDestinationHint": "No coincide con tu próximo destino.",
+    "previousDestinationHint": "No coincide con tu destino anterior.",
+    "returnCityHint": "No coincide con tu ciudad de regreso."
   },
   "accommodation": {
     "title": "Hospedaje",
