@@ -1,7 +1,9 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Destination } from '@/types/database';
 
-type DestinationUpdates = Partial<Pick<Destination, 'city' | 'duration' | 'position' | 'notes' | 'budget'>>;
+type DestinationUpdates = Partial<
+  Pick<Destination, 'city' | 'duration' | 'position' | 'is_stopover' | 'notes' | 'budget'>
+>;
 
 async function getNextDestinationPosition(tripId: number): Promise<number> {
   const supabase = createAdminClient();
@@ -23,7 +25,7 @@ async function getNextDestinationPosition(tripId: number): Promise<number> {
 
 function normalizeDuration(duration: number): number {
   const normalized = Math.trunc(duration);
-  return normalized > 0 ? normalized : 1;
+  return normalized >= 0 ? normalized : 0;
 }
 
 function normalizeCity(city: string): string {
@@ -79,9 +81,11 @@ export async function createDestination(
   tripId: number,
   city: string,
   duration: number,
-  position?: number
+  position?: number,
+  isStopover?: boolean
 ): Promise<Destination> {
   const supabase = createAdminClient();
+  const normalizedStopover = Boolean(isStopover);
   const nextPosition = await getNextDestinationPosition(tripId);
   const hasExplicitPosition = typeof position === 'number' && Number.isFinite(position);
   const resolvedPosition = hasExplicitPosition
@@ -97,8 +101,9 @@ export async function createDestination(
     .insert({
       trip_id: tripId,
       city: normalizeCity(city),
-      duration: normalizeDuration(duration),
-      position: resolvedPosition
+      duration: normalizedStopover ? normalizeDuration(duration) : Math.max(1, normalizeDuration(duration)),
+      position: resolvedPosition,
+      is_stopover: normalizedStopover
     })
     .select('*')
     .single();
@@ -122,10 +127,21 @@ export async function updateDestination(
     normalizedUpdates.city = normalizeCity(updates.city);
   }
   if (typeof updates.duration === 'number') {
-    normalizedUpdates.duration = normalizeDuration(updates.duration);
+    const normalizedDuration = normalizeDuration(updates.duration);
+    if (updates.is_stopover === true) {
+      normalizedUpdates.duration = normalizedDuration;
+    } else {
+      normalizedUpdates.duration = Math.max(1, normalizedDuration);
+    }
   }
   if (typeof updates.position === 'number') {
     normalizedUpdates.position = Math.max(0, Math.trunc(updates.position));
+  }
+  if (typeof updates.is_stopover === 'boolean') {
+    normalizedUpdates.is_stopover = updates.is_stopover;
+    if (updates.is_stopover === false && normalizedUpdates.duration !== undefined) {
+      normalizedUpdates.duration = Math.max(1, normalizedUpdates.duration);
+    }
   }
   if (updates.notes !== undefined) {
     normalizedUpdates.notes = updates.notes;

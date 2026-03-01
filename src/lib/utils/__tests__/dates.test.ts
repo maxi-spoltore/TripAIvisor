@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   calculateDate,
+  daysBetween,
   formatDate,
   getDestinationDates,
   getTotalDays,
@@ -51,6 +52,24 @@ describe('Date utilities', () => {
     });
   });
 
+  describe('daysBetween', () => {
+    it('returns positive difference when B is after A', () => {
+      expect(daysBetween('2024-01-15', '2024-01-20')).toBe(5);
+    });
+
+    it('returns negative difference when B is before A', () => {
+      expect(daysBetween('2024-01-20', '2024-01-15')).toBe(-5);
+    });
+
+    it('returns 0 for the same date', () => {
+      expect(daysBetween('2024-01-15', '2024-01-15')).toBe(0);
+    });
+
+    it('works across months', () => {
+      expect(daysBetween('2024-01-28', '2024-02-04')).toBe(7);
+    });
+  });
+
   describe('getTotalDays', () => {
     it('sums destination durations', () => {
       const destinations = [{ duration: 3 }, { duration: 5 }, { duration: 2 }];
@@ -80,6 +99,18 @@ describe('Date utilities', () => {
     it('returns null bounds when trip start date is missing', () => {
       const result = getDestinationDates(null, destinations, 0);
       expect(result).toEqual({ start: null, end: null });
+    });
+
+    it('offsets destination dates by travel days', () => {
+      const result = getDestinationDates('2024-01-15', [{ duration: 3 }, { duration: 5 }], 0, 2);
+      expect(result.start).toBe('2024-01-17');
+      expect(result.end).toBe('2024-01-20');
+    });
+
+    it("handles 0-duration stopover without advancing next destination's offset", () => {
+      const result = getDestinationDates('2024-01-15', [{ duration: 0 }, { duration: 5 }], 1);
+      expect(result.start).toBe('2024-01-15');
+      expect(result.end).toBe('2024-01-20');
     });
   });
 

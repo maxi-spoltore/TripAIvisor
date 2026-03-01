@@ -8,7 +8,7 @@ import { ShareModal } from '@/components/trips/share-modal';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
-import { validateEndDate } from '@/lib/utils/dates';
+import { calculateDate, daysBetween, validateEndDate } from '@/lib/utils/dates';
 import type { ExportedTrip } from '@/lib/utils/import-export';
 
 type TripHeaderProps = {
@@ -100,11 +100,20 @@ export function TripHeader({ locale, tripId, title, startDate, endDate, totalDay
       return;
     }
 
-    if (localEndDate) {
-      const result = validateEndDate(newStartDate, localEndDate, totalDays);
+    if (localEndDate && localStartDate) {
+      const delta = daysBetween(localStartDate, newStartDate);
+      const shiftedEndDate = calculateDate(localEndDate, delta);
 
-      if (!result.valid && result.error) {
-        setDateError(getDateErrorMessage(result.error));
+      if (shiftedEndDate) {
+        const result = validateEndDate(newStartDate, shiftedEndDate, totalDays);
+        if (!result.valid && result.error) {
+          setDateError(getDateErrorMessage(result.error));
+          return;
+        }
+
+        setLocalEndDate(shiftedEndDate);
+        setDateError(null);
+        saveDates(newStartDate, shiftedEndDate);
         return;
       }
     }

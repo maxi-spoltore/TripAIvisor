@@ -1,7 +1,7 @@
 'use client';
 
 import { DragEvent, FormEvent, Fragment, useEffect, useState, useTransition } from 'react';
-import { PlaneLanding, Plus } from 'lucide-react';
+import { ArrowRightLeft, PlaneLanding, PlaneTakeoff, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   createDestinationAction,
@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import type { DestinationWithRelations, Transport } from '@/types/database';
+import { DepartureCard } from './departure-card';
 import { DestinationCard } from './destination-card';
 import { DestinationModal, type DestinationModalSubmitInput } from './destination-modal';
 import { ReturnCard } from './return-card';
@@ -31,6 +32,9 @@ type DestinationListProps = {
   tripId: number;
   destinations: DestinationWithRelations[];
   startDate: string | null;
+  departureCity?: string;
+  departureTransport?: Transport | null;
+  travelDays?: number;
   returnCity?: string;
   returnDate?: string | null;
   returnTransport?: Transport | null;
@@ -52,6 +56,9 @@ export function DestinationList({
   tripId,
   destinations,
   startDate,
+  departureCity,
+  departureTransport,
+  travelDays,
   returnCity,
   returnDate,
   returnTransport
@@ -67,6 +74,7 @@ export function DestinationList({
   const [insertAtPosition, setInsertAtPosition] = useState<number | null>(null);
   const [newCity, setNewCity] = useState('');
   const [newDuration, setNewDuration] = useState('2');
+  const [isStopover, setIsStopover] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -141,7 +149,7 @@ export function DestinationList({
     }
 
     const parsedDuration = Number(newDuration);
-    const duration = Number.isFinite(parsedDuration) ? parsedDuration : 2;
+    const duration = Number.isFinite(parsedDuration) ? parsedDuration : isStopover ? 0 : 2;
 
     setErrorMessage(null);
 
@@ -152,7 +160,8 @@ export function DestinationList({
           tripId,
           city: trimmedCity,
           duration,
-          position: atPosition
+          position: atPosition,
+          isStopover
         });
 
         setItems((previousItems) => {
@@ -177,6 +186,7 @@ export function DestinationList({
         setInsertAtPosition(null);
         setNewCity('');
         setNewDuration('2');
+        setIsStopover(false);
       } catch {
         setErrorMessage(locale === 'es' ? 'No se pudo agregar el destino.' : 'Could not add destination.');
       }
@@ -252,6 +262,7 @@ export function DestinationList({
           destinationId: payload.destinationId,
           city: payload.city,
           duration: payload.duration,
+          isStopover: payload.isStopover,
           notes: payload.notes,
           budget: payload.budget,
           transport: payload.transport,
@@ -289,6 +300,29 @@ export function DestinationList({
           showTimelineNode ? '' : 'ml-0'
         )}
       >
+        <div className="flex items-center gap-2">
+          <input
+            checked={isStopover}
+            className="h-4 w-4 rounded border-slate-300 text-primary-600"
+            disabled={isPending}
+            id={atPosition !== undefined ? `stopover-${atPosition}` : 'stopover-bottom'}
+            onChange={(event) => {
+              setIsStopover(event.target.checked);
+              if (event.target.checked) {
+                setNewDuration('0');
+              } else {
+                setNewDuration('2');
+              }
+            }}
+            type="checkbox"
+          />
+          <label
+            className="text-xs font-medium text-slate-500"
+            htmlFor={atPosition !== undefined ? `stopover-${atPosition}` : 'stopover-bottom'}
+          >
+            {tDestinations('stopover')}
+          </label>
+        </div>
         <div className="flex flex-[2] flex-col gap-1">
           <label className="text-xs font-medium text-slate-500">{tDestinations('city')}</label>
           <Input
@@ -298,17 +332,19 @@ export function DestinationList({
             value={newCity}
           />
         </div>
-        <div className="flex flex-1 flex-col gap-1">
-          <label className="text-xs font-medium text-slate-500">{tDestinations('duration')}</label>
-          <Input
-            disabled={isPending}
-            min={1}
-            onChange={(event) => setNewDuration(event.target.value)}
-            placeholder={locale === 'es' ? 'Días' : 'Days'}
-            type="number"
-            value={newDuration}
-          />
-        </div>
+        {!isStopover ? (
+          <div className="flex flex-1 flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500">{tDestinations('duration')}</label>
+            <Input
+              disabled={isPending}
+              min={1}
+              onChange={(event) => setNewDuration(event.target.value)}
+              placeholder={locale === 'es' ? 'Días' : 'Days'}
+              type="number"
+              value={newDuration}
+            />
+          </div>
+        ) : null}
         <Button className="self-end" disabled={isPending} type="submit">
           {isPending ? (
             <>
@@ -323,7 +359,11 @@ export function DestinationList({
           <Button
             className="self-end"
             disabled={isPending}
-            onClick={() => setInsertAtPosition(null)}
+            onClick={() => {
+              setInsertAtPosition(null);
+              setIsStopover(false);
+              setNewDuration('2');
+            }}
             type="button"
             variant="outline"
           >
@@ -348,6 +388,22 @@ export function DestinationList({
       ) : (
         <div className="relative space-y-0">
           <div className="absolute left-5 top-6 bottom-6 w-0.5 bg-slate-200" />
+          {departureCity ? (
+            <div className="relative flex gap-4 pb-4">
+              <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-700 text-white">
+                <PlaneTakeoff className="h-4 w-4" />
+              </div>
+              <div className="flex-1">
+                <DepartureCard
+                  departureCity={departureCity}
+                  departureTransport={departureTransport ?? null}
+                  locale={locale}
+                  startDate={startDate}
+                  tripId={tripId}
+                />
+              </div>
+            </div>
+          ) : null}
           {items.map((destination, index) => (
             <Fragment key={destination.destination_id}>
               {insertAtPosition === index ? (
@@ -357,7 +413,11 @@ export function DestinationList({
                   <button
                     className="relative z-10 ml-2.5 flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-slate-300 bg-white text-slate-400 opacity-0 transition-all duration-150 group-hover/insert:opacity-100 hover:border-primary-400 hover:text-primary-500 focus-visible:opacity-100"
                     disabled={isPending}
-                    onClick={() => setInsertAtPosition(index)}
+                    onClick={() => {
+                      setInsertAtPosition(index);
+                      setIsStopover(false);
+                      setNewDuration('2');
+                    }}
                     title={tDestinations('insertHere')}
                     type="button"
                   >
@@ -375,9 +435,15 @@ export function DestinationList({
                 onDrop={(event) => handleDrop(event, index)}
                 className={cn('relative flex gap-4 pb-4', draggedIndex === index ? 'opacity-60' : null)}
               >
-                <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-primary-300 bg-white text-sm font-bold text-primary-700">
-                  {index + 1}
-                </div>
+                {destination.is_stopover ? (
+                  <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-dashed border-amber-300 bg-amber-50 text-amber-600">
+                    <ArrowRightLeft className="h-4 w-4" />
+                  </div>
+                ) : (
+                  <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-primary-300 bg-white text-sm font-bold text-primary-700">
+                    {index + 1}
+                  </div>
+                )}
                 <div className="flex-1">
                   <DestinationCard
                     destination={destination}
@@ -391,6 +457,7 @@ export function DestinationList({
                     openMenuId={openMenuId}
                     setOpenMenuId={setOpenMenuId}
                     startDate={startDate}
+                    travelDays={travelDays ?? 0}
                   />
                 </div>
               </div>

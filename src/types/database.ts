@@ -49,6 +49,7 @@ export interface Destination {
   city: string;
   duration: number;
   position: number;
+  is_stopover: boolean;
   notes: string | null;
   budget: number | null;
   created_at: string;
@@ -67,6 +68,8 @@ export interface Transport {
   booking_number: string | null;
   booking_code: string | null;
   departure_time: string | null;
+  arrival_time: string | null;
+  travel_days: number;
   created_at: string;
   updated_at: string;
 }

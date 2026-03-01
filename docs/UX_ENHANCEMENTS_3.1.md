@@ -497,6 +497,36 @@ describe('daysBetween', () => {
 - [ ] If start date is cleared, end date is also cleared.
 - [ ] `daysBetween` tests pass.
 
+### Task 3 Implementation Summary (Completed)
+
+**Scope implemented**
+
+- Updated `src/lib/utils/dates.ts`:
+  - Added `daysBetween(dateA, dateB)` using local date parsing and `Math.round` day-difference calculation to preserve correctness across DST boundary hour shifts.
+- Updated `src/components/trips/trip-header.tsx` start-date flow:
+  - Added imports for `calculateDate` and `daysBetween`.
+  - Updated `handleStartDateChange` to preserve trip duration by:
+    - computing start-date delta from previous start date to new start date,
+    - shifting existing end date by the same delta,
+    - validating shifted end date against `validateEndDate`,
+    - saving shifted end date when valid.
+  - Preserved existing edge-case behavior:
+    - clearing start date clears end date and persists `null` dates,
+    - when no end date exists, start date saves without forcing an end date.
+- Updated `src/lib/utils/__tests__/dates.test.ts`:
+  - Added `daysBetween` coverage for positive, negative, zero, and cross-month differences.
+
+**Validation performed**
+
+- `npm run build` completed successfully after Task 3 changes.
+- Build output still reports one pre-existing ESLint warning in `src/components/layout/user-menu.tsx` (`@next/next/no-img-element`), unrelated to Task 3.
+- `vitest` execution is still not available in this repository setup (`vitest` is not present in project dependencies/scripts), so the newly added unit tests were added but could not be executed in this environment.
+
+**Task 3 outcome**
+
+- End date now auto-shifts when start date changes, preserving trip length instead of leaving dates mismatched.
+- Date utility support (`daysBetween`) and test coverage for the new helper are in place.
+
 ---
 
 ## Task 4: Stopovers & Departure Card
@@ -1180,6 +1210,55 @@ it('handles 0-duration stopover without advancing offset', () => {
 - [ ] **0-duration:** Stopover with 0 days doesn't advance date offset — next destination starts on the same date.
 - [ ] All existing tests pass. New `getDestinationDates` tests pass.
 - [ ] `npm run build` and `npm run lint` pass.
+
+### Task 4 Implementation Summary (Completed)
+
+**Scope implemented**
+
+- Added migration `supabase/migrations/202602280002_add_stopovers.sql`:
+  - Added `destinations.is_stopover` (`boolean`, default `false`).
+  - Replaced duration check constraint to allow `duration >= 0` only when `is_stopover = true`.
+  - Added `transports.arrival_time` (`time`) and `transports.travel_days` (`integer`, default `0`).
+- Extended data model in `src/types/database.ts`:
+  - `Destination` now includes `is_stopover`.
+  - `Transport` now includes `arrival_time` and `travel_days`.
+- Updated destination query/action persistence:
+  - `createDestination`/`createDestinationAction` now accept and persist `isStopover` into `is_stopover`.
+  - `saveDestinationDetailsAction` now accepts `isStopover`, persists `is_stopover`, and allows zero-day durations.
+  - Destination query normalization now supports stopover-compatible duration values.
+- Added departure transport editing backend:
+  - Added `updateDepartureTransportAction` in `src/app/actions/trips.ts`.
+  - Extended `upsertTransport` in `src/lib/db/queries/transports.ts` to persist `arrival_time` and `travel_days`.
+- Implemented departure transport UI:
+  - Added `src/components/trips/departure-transport-modal.tsx` with all transport fields plus `arrival_time` and `travel_days`.
+  - Replaced placeholder `src/components/trips/departure-card.tsx` with full card + edit flow, transport details rendering, and travel-days badge.
+- Wired departure card and travel-day offsets into timeline:
+  - `src/app/[locale]/trips/[tripId]/page.tsx` now computes `travelDays` from departure transport.
+  - Return date now uses `trip start + travelDays + totalDestinationDays`.
+  - `DestinationList` now renders a top departure node/card and passes `travelDays` into each `DestinationCard`.
+- Implemented stopover UX in destination list/cards/modals:
+  - Add-destination form now includes a stopover toggle, hides duration when enabled, defaults to `0`, and persists as stopover.
+  - Timeline node shows a stopover icon/style for stopover rows.
+  - `DestinationCard` now supports stopover visual variant (dashed card, amber badge, stopover label) and hides accommodation sections for stopovers.
+  - `DestinationModal` now includes stopover toggle, stopover-aware duration behavior, and submits `isStopover`.
+- Updated date utility for travel-day offsets:
+  - `getDestinationDates` now accepts optional `travelDays` offset (default `0`).
+  - Added tests for travel-day offset behavior and 0-duration stopover behavior in `src/lib/utils/__tests__/dates.test.ts`.
+- Added i18n keys in `src/messages/en.json` and `src/messages/es.json`:
+  - `trips`: `editDeparture`, `travelDaysBadge`.
+  - `transport`: `arrivalTime`, `travelDays`.
+  - `destinations`: `stopover`.
+
+**Validation performed**
+
+- `npm run build` passes after Task 4 changes (one pre-existing lint warning remains in `src/components/layout/user-menu.tsx` for `@next/next/no-img-element`, unrelated to Task 4).
+- `npm run lint` passes with the same pre-existing warning.
+- `npx vitest run src/lib/utils/__tests__/dates.test.ts` could not run in this environment because `vitest` is not installed as a local dependency and restricted network prevents downloading it from npm.
+
+**Task 4 outcome**
+
+- Task 4a/4b/4c/4d code paths are implemented and wired through schema, types, actions, UI, i18n, and date calculation behavior.
+- Manual runtime verification of all UI acceptance criteria remains pending local interaction testing.
 
 ---
 

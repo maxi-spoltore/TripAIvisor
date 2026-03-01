@@ -249,6 +249,39 @@ export async function updateReturnTransportAction(input: {
   return result;
 }
 
+export async function updateDepartureTransportAction(input: {
+  locale: string;
+  tripId: number;
+  transport: {
+    transport_type: TransportType;
+    leave_accommodation_time: string | null;
+    terminal: string | null;
+    company: string | null;
+    booking_number: string | null;
+    booking_code: string | null;
+    departure_time: string | null;
+    arrival_time: string | null;
+    travel_days: number;
+  };
+}): Promise<Transport> {
+  const { locale, tripId, transport } = input;
+
+  await requireUserId(locale);
+
+  if (!Number.isFinite(tripId)) {
+    throw new Error('Invalid trip id.');
+  }
+
+  const result = await upsertTransport({
+    trip_id: tripId,
+    transport_role: 'departure',
+    ...transport
+  });
+
+  revalidatePath(`/${locale}/trips/${tripId}`);
+  return result;
+}
+
 export async function importTripFromDataAction(input: {
   locale: string;
   data: unknown;

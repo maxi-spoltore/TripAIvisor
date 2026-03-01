@@ -56,8 +56,9 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
   }
 
   const tTrips = await getTranslations({ locale, namespace: 'trips' });
+  const travelDays = trip.departure_transport?.travel_days ?? 0;
   const totalDays = trip.destinations.reduce((acc, destination) => acc + destination.duration, 0);
-  const returnDate = calculateDate(trip.start_date, totalDays);
+  const returnDate = calculateDate(trip.start_date, travelDays + totalDays);
   const exportedTrip = exportTrip(trip);
 
   return (
@@ -88,12 +89,15 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
       />
 
       <DestinationList
+        departureCity={trip.departure_city}
+        departureTransport={trip.departure_transport}
         destinations={trip.destinations}
         locale={locale}
         returnCity={trip.return_city ?? trip.departure_city}
         returnDate={returnDate}
         returnTransport={trip.return_transport}
         startDate={trip.start_date}
+        travelDays={travelDays}
         tripId={trip.trip_id}
       />
     </main>

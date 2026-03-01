@@ -50,7 +50,9 @@
     "returnTo": "Return to {city}",
     "backToTrips": "Back to trips",
     "endOfTrip": "End of trip",
-    "editReturn": "Edit return details"
+    "editReturn": "Edit return details",
+    "editDeparture": "Edit departure details",
+    "travelDaysBadge": "{count} travel days"
   },
   "destinations": {
     "add": "Add Destination",
@@ -59,7 +61,8 @@
     "duration": "Duration (days)",
     "newCity": "New City",
     "insertHere": "Add city here",
-    "confirmDeleteDestination": "This destination and all its details will be permanently deleted."
+    "confirmDeleteDestination": "This destination and all its details will be permanently deleted.",
+    "stopover": "Stopover"
   },
   "transport": {
     "title": "Transport",
@@ -72,7 +75,9 @@
     "company": "Company",
     "bookingNumber": "Ticket number",
     "bookingCode": "Booking code",
-    "departureTime": "Departure time"
+    "departureTime": "Departure time",
+    "arrivalTime": "Arrival time",
+    "travelDays": "Travel days"
   },
   "accommodation": {
     "title": "Accommodation",

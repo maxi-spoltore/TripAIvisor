@@ -12,6 +12,7 @@ import {
   Bus
 } from 'lucide-react';
 import { formatDate, getDestinationDates } from '@/lib/utils/dates';
+import { cn } from '@/lib/utils';
 import type { Accommodation, DestinationWithRelations, Transport, TransportType } from '@/types/database';
 
 type DestinationCardProps = {
@@ -20,6 +21,7 @@ type DestinationCardProps = {
   index: number;
   locale: string;
   startDate: string | null;
+  travelDays?: number;
   expanded: boolean;
   openMenuId: number | null;
   onToggle: () => void;
@@ -201,6 +203,7 @@ export function DestinationCard({
   index,
   locale,
   startDate,
+  travelDays = 0,
   expanded,
   openMenuId,
   onToggle,
@@ -209,7 +212,7 @@ export function DestinationCard({
   setOpenMenuId
 }: DestinationCardProps) {
   const localeTag = locale === 'en' ? 'en-US' : 'es-ES';
-  const { start, end } = getDestinationDates(startDate, destinations, index);
+  const { start, end } = getDestinationDates(startDate, destinations, index, travelDays);
   const dateRange = start && end ? `${formatDate(start, localeTag)} - ${formatDate(end, localeTag)}` : null;
   const cardId = destination.destination_id;
   const menuId = `destination-actions-${cardId}`;
@@ -217,11 +220,11 @@ export function DestinationCard({
   const actionsLabel = locale === 'es' ? 'Acciones' : 'Actions';
 
   const hasTransport = hasTransportContent(destination.transport);
-  const hasAccommodation = hasAccommodationContent(destination.accommodation);
+  const hasAccommodation = !destination.is_stopover && hasAccommodationContent(destination.accommodation);
   const TransportIcon = getTransportIconByType(destination.transport?.transport_type);
 
   const transportDetails = getTransportDetails(destination.transport, locale);
-  const accommodationDetails = getAccommodationDetails(destination.accommodation, locale);
+  const accommodationDetails = destination.is_stopover ? [] : getAccommodationDetails(destination.accommodation, locale);
   const transportPreview = transportDetails.slice(0, 2);
   const accommodationPreview = accommodationDetails.slice(0, 2);
   const hasMoreContent =
@@ -231,7 +234,12 @@ export function DestinationCard({
     destination.budget !== null;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
+    <div
+      className={cn(
+        'rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md',
+        destination.is_stopover ? 'border-dashed border-slate-300 bg-slate-50' : 'border-slate-200 bg-white'
+      )}
+    >
       <div className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
@@ -242,8 +250,17 @@ export function DestinationCard({
             </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                {destination.duration} {locale === 'es' ? 'días' : 'days'}
+              <span
+                className={cn(
+                  'rounded-full px-2.5 py-0.5 text-xs font-medium',
+                  destination.is_stopover ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+                )}
+              >
+                {destination.is_stopover
+                  ? locale === 'es'
+                    ? 'Escala'
+                    : 'Stopover'
+                  : `${destination.duration} ${locale === 'es' ? 'días' : 'days'}`}
               </span>
               {dateRange ? <span>{dateRange}</span> : null}
             </div>
@@ -313,7 +330,7 @@ export function DestinationCard({
                 ))}
               </div>
             ) : null}
-            {accommodationPreview.length > 0 ? (
+            {accommodationPreview.length > 0 && !destination.is_stopover ? (
               <div className="space-y-1">
                 {accommodationPreview.map((field) => (
                   <p key={`accommodation-${field.label}`}>
@@ -360,7 +377,7 @@ export function DestinationCard({
               </div>
             ) : null}
 
-            {accommodationDetails.length > 0 ? (
+            {accommodationDetails.length > 0 && !destination.is_stopover ? (
               <div className="rounded-lg bg-amber-50/50 p-3">
                 <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-700">
                   <Hotel className="h-4 w-4" />

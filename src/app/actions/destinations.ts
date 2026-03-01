@@ -34,6 +34,7 @@ type DestinationUpdateInput = {
   city?: string;
   duration?: number;
   position?: number;
+  is_stopover?: boolean;
   notes?: string | null;
   budget?: number | null;
 };
@@ -63,6 +64,7 @@ type DestinationDetailsInput = {
   destinationId: number;
   city: string;
   duration: number;
+  isStopover: boolean;
   notes: string | null;
   budget: number | null;
   transport: DestinationDetailsTransportInput;
@@ -124,8 +126,9 @@ export async function createDestinationAction(input: {
   city: string;
   duration: number;
   position?: number;
+  isStopover?: boolean;
 }): Promise<Destination> {
-  const { locale, tripId, city, duration, position } = input;
+  const { locale, tripId, city, duration, position, isStopover } = input;
 
   await requireUserId(locale);
 
@@ -133,7 +136,7 @@ export async function createDestinationAction(input: {
     throw new Error('Invalid trip id.');
   }
 
-  const destination = await createDestination(tripId, city, duration, position);
+  const destination = await createDestination(tripId, city, duration, position, isStopover);
   revalidateTripPaths(locale, tripId);
 
   return destination;
@@ -196,7 +199,7 @@ export async function reorderDestinationsAction(input: {
 export async function saveDestinationDetailsAction(
   input: DestinationDetailsInput
 ): Promise<DestinationWithRelations> {
-  const { locale, tripId, destinationId, city, duration, notes, budget, transport, accommodation } = input;
+  const { locale, tripId, destinationId, city, duration, isStopover, notes, budget, transport, accommodation } = input;
 
   await requireUserId(locale);
 
@@ -204,8 +207,8 @@ export async function saveDestinationDetailsAction(
     throw new Error('Invalid destination details payload.');
   }
 
-  if (!Number.isFinite(duration) || duration < 1) {
-    throw new Error('Duration must be at least 1.');
+  if (!Number.isFinite(duration) || duration < 0) {
+    throw new Error('Duration must be at least 0.');
   }
 
   if (budget !== null && !Number.isFinite(budget)) {
@@ -217,6 +220,7 @@ export async function saveDestinationDetailsAction(
     {
       city,
       duration,
+      is_stopover: isStopover,
       notes,
       budget
     },

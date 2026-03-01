@@ -24,6 +24,7 @@ export type DestinationModalSubmitInput = {
   destinationId: number;
   city: string;
   duration: number;
+  isStopover: boolean;
   notes: string | null;
   budget: number | null;
   transport: {
@@ -48,6 +49,7 @@ export type DestinationModalSubmitInput = {
 type DestinationModalFormState = {
   city: string;
   duration: string;
+  isStopover: boolean;
   notes: string;
   budget: string;
   transport: {
@@ -169,6 +171,7 @@ export function DestinationModal({
     setFormState({
       city: destination.city,
       duration: String(destination.duration),
+      isStopover: destination.is_stopover,
       notes: destination.notes ?? '',
       budget: destination.budget === null ? '' : String(destination.budget),
       transport: {
@@ -245,7 +248,9 @@ export function DestinationModal({
       cancel: locale === 'es' ? 'Cancelar' : 'Cancel',
       cityRequired: locale === 'es' ? 'El nombre de la ciudad es obligatorio.' : 'City name is required.',
       durationInvalid:
-        locale === 'es' ? 'La duración debe ser al menos 1 día.' : 'Duration must be at least 1 day.',
+        locale === 'es'
+          ? 'La duración debe ser al menos 1 día (0 para escala).'
+          : 'Duration must be at least 1 day (0 for stopover).',
       budgetInvalid: locale === 'es' ? 'El presupuesto debe ser un número válido.' : 'Budget must be a valid number.'
     }),
     [locale]
@@ -265,7 +270,7 @@ export function DestinationModal({
     }
 
     const duration = Number(formState.duration);
-    if (!Number.isFinite(duration) || duration < 1) {
+    if (!Number.isFinite(duration) || (!formState.isStopover && duration < 1) || duration < 0) {
       setErrorMessage(strings.durationInvalid);
       return;
     }
@@ -283,6 +288,7 @@ export function DestinationModal({
       destinationId: destination.destination_id,
       city,
       duration: Math.trunc(duration),
+      isStopover: formState.isStopover,
       notes: toNullable(formState.notes),
       budget,
       transport: {
@@ -339,6 +345,27 @@ export function DestinationModal({
 
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
           <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <input
+                checked={formState.isStopover}
+                className="h-4 w-4 rounded border-slate-300 text-primary-600"
+                disabled={isPending}
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  setFormState((previous) =>
+                    previous
+                      ? {
+                          ...previous,
+                          isStopover: checked,
+                          duration: checked ? '0' : previous.duration === '0' ? '2' : previous.duration
+                        }
+                      : previous
+                  );
+                }}
+                type="checkbox"
+              />
+              <Label>{locale === 'es' ? 'Escala' : 'Stopover'}</Label>
+            </div>
             <div className="space-y-1">
               <Label>{strings.cityLabel}</Label>
               <Input
@@ -357,25 +384,27 @@ export function DestinationModal({
                 value={formState.city}
               />
             </div>
-            <div className="space-y-1">
-              <Label>{strings.durationLabel}</Label>
-              <Input
-                disabled={isPending}
-                min={1}
-                onChange={(event) =>
-                  setFormState((previous) =>
-                    previous
-                      ? {
-                          ...previous,
-                          duration: event.target.value
-                        }
-                      : previous
-                  )
-                }
-                type="number"
-                value={formState.duration}
-              />
-            </div>
+            {!formState.isStopover ? (
+              <div className="space-y-1">
+                <Label>{strings.durationLabel}</Label>
+                <Input
+                  disabled={isPending}
+                  min={1}
+                  onChange={(event) =>
+                    setFormState((previous) =>
+                      previous
+                        ? {
+                            ...previous,
+                            duration: event.target.value
+                          }
+                        : previous
+                    )
+                  }
+                  type="number"
+                  value={formState.duration}
+                />
+              </div>
+            ) : null}
           </div>
 
           <div

@@ -14,6 +14,8 @@ type TransportUpsertInput = {
   booking_number?: string | null;
   booking_code?: string | null;
   departure_time?: string | null;
+  arrival_time?: string | null;
+  travel_days?: number;
 };
 
 type TransportContext = {
@@ -45,6 +47,18 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
 
 function normalizeOptionalTime(value: string | null | undefined): string | null | undefined {
   return normalizeOptionalText(value);
+}
+
+function normalizeTravelDays(value: number | undefined): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.trunc(value));
 }
 
 function resolveTransportContext(input: TransportUpsertInput): TransportContext {
@@ -113,6 +127,16 @@ function buildTransportUpdates(input: TransportUpsertInput): Partial<Transport> 
   const departureTime = normalizeOptionalTime(input.departure_time);
   if (departureTime !== undefined) {
     updates.departure_time = departureTime;
+  }
+
+  const arrivalTime = normalizeOptionalTime(input.arrival_time);
+  if (arrivalTime !== undefined) {
+    updates.arrival_time = arrivalTime;
+  }
+
+  const travelDays = normalizeTravelDays(input.travel_days);
+  if (travelDays !== undefined) {
+    updates.travel_days = travelDays;
   }
 
   return updates;

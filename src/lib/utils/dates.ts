@@ -22,6 +22,12 @@ export function calculateDate(baseDate: string | null, daysToAdd: number): strin
   return `${year}-${month}-${day}`;
 }
 
+export function daysBetween(dateA: string, dateB: string): number {
+  const a = parseLocalDate(dateA);
+  const b = parseLocalDate(dateB);
+  return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 export function formatDate(dateStr: string | null, locale = 'es-ES'): string {
   if (!dateStr) {
     return '';
@@ -38,13 +44,14 @@ export function getTotalDays(destinations: DestinationDuration[]): number {
 export function getDestinationDates(
   startDate: string | null,
   destinations: DestinationDuration[],
-  index: number
+  index: number,
+  travelDays: number = 0
 ): { start: string | null; end: string | null } {
   if (!startDate) {
     return { start: null, end: null };
   }
 
-  let dayOffset = 0;
+  let dayOffset = travelDays;
   for (let i = 0; i < index; i += 1) {
     dayOffset += destinations[i].duration || 0;
   }
