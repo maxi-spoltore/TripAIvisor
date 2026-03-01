@@ -4,14 +4,22 @@ type DestinationDuration = {
 
 type EndDateValidationError = 'endDateBeforeStart' | 'endDateCollision';
 
+function parseLocalDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 export function calculateDate(baseDate: string | null, daysToAdd: number): string | null {
   if (!baseDate) {
     return null;
   }
 
-  const date = new Date(baseDate);
+  const date = parseLocalDate(baseDate);
   date.setDate(date.getDate() + daysToAdd);
-  return date.toISOString().split('T')[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function formatDate(dateStr: string | null, locale = 'es-ES'): string {
@@ -19,7 +27,7 @@ export function formatDate(dateStr: string | null, locale = 'es-ES'): string {
     return '';
   }
 
-  const date = new Date(dateStr);
+  const date = parseLocalDate(dateStr);
   return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 }
 
@@ -52,8 +60,8 @@ export function validateEndDate(
   newEndDate: string,
   currentTotalDays: number
 ): { valid: boolean; error?: EndDateValidationError; difference?: number } {
-  const start = new Date(startDate);
-  const end = new Date(newEndDate);
+  const start = parseLocalDate(startDate);
+  const end = parseLocalDate(newEndDate);
 
   if (end < start) {
     return { valid: false, error: 'endDateBeforeStart' };

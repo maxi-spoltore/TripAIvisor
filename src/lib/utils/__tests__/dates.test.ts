@@ -24,6 +24,10 @@ describe('Date utilities', () => {
     it('returns null when base date is missing', () => {
       expect(calculateDate(null, 3)).toBeNull();
     });
+
+    it('calculates date without UTC drift', () => {
+      expect(calculateDate('2024-05-01', 0)).toBe('2024-05-01');
+    });
   });
 
   describe('formatDate', () => {
@@ -39,6 +43,11 @@ describe('Date utilities', () => {
 
     it('returns an empty string for null input', () => {
       expect(formatDate(null)).toBe('');
+    });
+
+    it('formats May 1 correctly regardless of timezone', () => {
+      const result = formatDate('2024-05-01', 'en-US');
+      expect(result).toMatch(/may.*1/i);
     });
   });
 

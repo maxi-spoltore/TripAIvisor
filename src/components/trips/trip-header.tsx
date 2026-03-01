@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { updateTripDatesAction, updateTripTitleAction } from '@/app/actions/trips';
 import { ShareModal } from '@/components/trips/share-modal';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { validateEndDate } from '@/lib/utils/dates';
 import type { ExportedTrip } from '@/lib/utils/import-export';
@@ -173,12 +174,12 @@ export function TripHeader({ locale, tripId, title, startDate, endDate, totalDay
             <label className="text-xs font-medium text-slate-500" htmlFor="trip-start-date">
               {tTrips('startDateLabel')}
             </label>
-            <input
-              className="rounded-lg border border-slate-300 px-2 py-1 text-sm"
+            <DatePicker
               disabled={isPending}
               id="trip-start-date"
-              onChange={(event) => handleStartDateChange(event.target.value)}
-              type="date"
+              locale={locale}
+              onChange={handleStartDateChange}
+              placeholder={tTrips('startDateLabel')}
               value={localStartDate}
             />
           </div>
@@ -186,12 +187,12 @@ export function TripHeader({ locale, tripId, title, startDate, endDate, totalDay
             <label className="text-xs font-medium text-slate-500" htmlFor="trip-end-date">
               {tTrips('endDateLabel')}
             </label>
-            <input
-              className="rounded-lg border border-slate-300 px-2 py-1 text-sm"
+            <DatePicker
               disabled={isPending}
               id="trip-end-date"
-              onChange={(event) => handleEndDateChange(event.target.value)}
-              type="date"
+              locale={locale}
+              onChange={handleEndDateChange}
+              placeholder={tTrips('endDateLabel')}
               value={localEndDate}
             />
           </div>
