@@ -1,9 +1,103 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useReducer, useEffect } from 'react';
 import { Plane, Train, Bus, Hotel, StickyNote, DollarSign, MapPin, Clock, Plus, Edit2, Trash2, ChevronDown, ChevronUp, Download, Upload, GripVertical, Calendar, MoreVertical } from 'lucide-react';
 
+const initialState = {
+  tripTitle: 'Mi Viaje',
+  startDate: null,
+  departure: null,
+  destinations: [],
+  returnTrip: null,
+  expandedCards: {},
+  openMenuId: null,
+  draggedIndex: null,
+  deleteConfirm: null,
+};
+
+const travelPlannerReducer = (state, action) => {
+  switch (action.type) {
+    case 'LOAD_DATA':
+      return {
+        ...state,
+        tripTitle: action.data.title || 'Mi Viaje',
+        startDate: action.data.startDate || null,
+        departure: action.data.departure || null,
+        destinations: action.data.destinations || [],
+        returnTrip: action.data.return || null,
+      };
+    case 'SET_TITLE':
+      return { ...state, tripTitle: action.title };
+    case 'SET_START_DATE': {
+      const newDeparture = state.departure
+        ? { ...state.departure, date: action.date }
+        : { type: 'departure', city: 'Buenos Aires', date: action.date, transport: {} };
+      return { ...state, startDate: action.date, departure: newDeparture };
+    }
+    case 'ADD_DESTINATION':
+      return { ...state, destinations: [...state.destinations, action.destination] };
+    case 'EXTEND_LAST_DESTINATION': {
+      const dests = [...state.destinations];
+      const lastIdx = dests.length - 1;
+      dests[lastIdx] = { ...dests[lastIdx], duration: dests[lastIdx].duration + action.extraDays };
+      return { ...state, destinations: dests };
+    }
+    case 'SAVE_CARD': {
+      const { cardData } = action;
+      if (cardData.type === 'departure') {
+        return { ...state, departure: { ...state.departure, ...cardData, type: 'departure' } };
+      }
+      if (cardData.type === 'return') {
+        return { ...state, returnTrip: { ...state.returnTrip, ...cardData, type: 'return' } };
+      }
+      if (cardData.isNew) {
+        const { isNew, ...destData } = cardData;
+        return { ...state, destinations: [...state.destinations, destData] };
+      }
+      return {
+        ...state,
+        destinations: state.destinations.map(d => d.id === cardData.id ? { ...d, ...cardData } : d),
+      };
+    }
+    case 'REQUEST_DELETE':
+      return { ...state, deleteConfirm: action.id, openMenuId: null };
+    case 'CONFIRM_DELETE': {
+      const id = state.deleteConfirm;
+      const { [id]: _, ...remainingExpanded } = state.expandedCards;
+      return {
+        ...state,
+        destinations: state.destinations.filter(d => d.id !== id),
+        deleteConfirm: null,
+        expandedCards: remainingExpanded,
+      };
+    }
+    case 'CANCEL_DELETE':
+      return { ...state, deleteConfirm: null };
+    case 'REORDER': {
+      const newDests = [...state.destinations];
+      const [dragged] = newDests.splice(action.fromIndex, 1);
+      newDests.splice(action.toIndex, 0, dragged);
+      return { ...state, destinations: newDests, draggedIndex: null };
+    }
+    case 'DRAG_START':
+      return { ...state, draggedIndex: action.index, openMenuId: null };
+    case 'DRAG_END':
+      return { ...state, draggedIndex: null };
+    case 'TOGGLE_CARD': {
+      const prev = state.expandedCards;
+      return { ...state, expandedCards: { ...prev, [action.id]: !prev[action.id] } };
+    }
+    case 'OPEN_MENU':
+      return { ...state, openMenuId: action.id };
+    case 'CLOSE_MENU':
+      return { ...state, openMenuId: null };
+    default:
+      return state;
+  }
+};
+
 const TravelPlanner = () => {
-  const [tripTitle, setTripTitle] = useState('Mi Viaje');
-  const [startDate, setStartDate] = useState(null);
+  const [state, dispatch] = useReducer(travelPlannerReducer, initialState);
+  const { tripTitle, startDate, departure, destinations, returnTrip, expandedCards, openMenuId, draggedIndex, deleteConfirm } = state;
+
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [showEndDateOptions, setShowEndDateOptions] = useState(false);
@@ -11,18 +105,11 @@ const TravelPlanner = () => {
   const [tempEndDate, setTempEndDate] = useState('');
   const [endDateDiff, setEndDateDiff] = useState(0);
   const [endDateAction, setEndDateAction] = useState('add');
-  const [departure, setDeparture] = useState(null);
-  const [destinations, setDestinations] = useState([]);
-  const [returnTrip, setReturnTrip] = useState(null);
   const [editingCard, setEditingCard] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [expandedCards, setExpandedCards] = useState({});
-  const [draggedIndex, setDraggedIndex] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportData, setExportData] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState(null);
 
   // Load from localStorage
   useEffect(() => {
@@ -30,11 +117,7 @@ const TravelPlanner = () => {
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        setTripTitle(data.title || 'Mi Viaje');
-        setStartDate(data.startDate || null);
-        setDeparture(data.departure || null);
-        setDestinations(data.destinations || []);
-        setReturnTrip(data.return || null);
+        dispatch({ type: 'LOAD_DATA', data });
       } catch (e) {
         console.error('Error loading data:', e);
       }
@@ -89,20 +172,7 @@ const TravelPlanner = () => {
       alert('Selecciona una fecha');
       return;
     }
-    setStartDate(tempDate);
-    if (!departure) {
-      setDeparture({
-        type: 'departure',
-        city: 'Buenos Aires',
-        date: tempDate,
-        transport: {}
-      });
-    } else {
-      setDeparture({
-        ...departure,
-        date: tempDate
-      });
-    }
+    dispatch({ type: 'SET_START_DATE', date: tempDate });
     setShowDatePicker(false);
     setTempDate('');
   };
@@ -149,7 +219,6 @@ const TravelPlanner = () => {
 
   const handleConfirmEndDateAction = () => {
     if (endDateAction === 'add') {
-      // Crear nueva ciudad con los días disponibles
       const newDest = {
         id: Date.now().toString(),
         city: 'Nueva Ciudad',
@@ -159,18 +228,11 @@ const TravelPlanner = () => {
         notes: '',
         budget: null
       };
-      setDestinations([...destinations, newDest]);
+      dispatch({ type: 'ADD_DESTINATION', destination: newDest });
     } else if (endDateAction === 'extend') {
-      // Extender última ciudad
-      const updatedDestinations = [...destinations];
-      const lastIndex = updatedDestinations.length - 1;
-      updatedDestinations[lastIndex] = {
-        ...updatedDestinations[lastIndex],
-        duration: updatedDestinations[lastIndex].duration + endDateDiff
-      };
-      setDestinations(updatedDestinations);
+      dispatch({ type: 'EXTEND_LAST_DESTINATION', extraDays: endDateDiff });
     }
-    
+
     setShowEndDateOptions(false);
     setEndDateDiff(0);
     setEndDateAction('add');
@@ -197,31 +259,7 @@ const TravelPlanner = () => {
   };
 
   const handleSaveCard = (cardData) => {
-    if (cardData.type === 'departure') {
-      const updatedDeparture = {
-        ...departure,
-        ...cardData,
-        type: 'departure'
-      };
-      setDeparture(updatedDeparture);
-    } else if (cardData.type === 'return') {
-      const updatedReturn = {
-        ...returnTrip,
-        ...cardData,
-        type: 'return'
-      };
-      setReturnTrip(updatedReturn);
-    } else {
-      if (cardData.isNew) {
-        const { isNew, ...destData } = cardData;
-        setDestinations([...destinations, destData]);
-      } else {
-        setDestinations(destinations.map(d => 
-          d.id === cardData.id ? { ...d, ...cardData } : d
-        ));
-      }
-    }
-    
+    dispatch({ type: 'SAVE_CARD', cardData });
     setShowModal(false);
     setEditingCard(null);
   };
@@ -232,26 +270,25 @@ const TravelPlanner = () => {
   };
 
   const handleDeleteDestination = (id) => {
-    setDeleteConfirm(id);
+    dispatch({ type: 'REQUEST_DELETE', id });
   };
 
   const confirmDelete = () => {
     if (deleteConfirm) {
-      setDestinations(destinations.filter(d => d.id !== deleteConfirm));
-      setDeleteConfirm(null);
+      dispatch({ type: 'CONFIRM_DELETE' });
     }
   };
 
   const cancelDelete = () => {
-    setDeleteConfirm(null);
+    dispatch({ type: 'CANCEL_DELETE' });
   };
 
   const toggleExpand = (id) => {
-    setExpandedCards(prev => ({ ...prev, [id]: !prev[id] }));
+    dispatch({ type: 'TOGGLE_CARD', id });
   };
 
   const handleDragStart = (e, index) => {
-    setDraggedIndex(index);
+    dispatch({ type: 'DRAG_START', index });
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -262,15 +299,15 @@ const TravelPlanner = () => {
 
   const handleDrop = (e, dropIndex) => {
     e.preventDefault();
-    
+
     if (draggedIndex === null || draggedIndex === dropIndex) return;
-    
-    const newDestinations = [...destinations];
-    const [draggedItem] = newDestinations.splice(draggedIndex, 1);
-    newDestinations.splice(dropIndex, 0, draggedItem);
-    
-    setDestinations(newDestinations);
-    setDraggedIndex(null);
+
+    dispatch({ type: 'REORDER', fromIndex: draggedIndex, toIndex: dropIndex });
+  };
+
+  const handleSetOpenMenuId = (id) => {
+    if (id === null) dispatch({ type: 'CLOSE_MENU' });
+    else dispatch({ type: 'OPEN_MENU', id });
   };
 
   const exportJSON = () => {
@@ -304,11 +341,7 @@ const TravelPlanner = () => {
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target.result);
-        setTripTitle(data.title || 'Mi Viaje');
-        setStartDate(data.startDate || null);
-        setDeparture(data.departure || null);
-        setDestinations(data.destinations || []);
-        setReturnTrip(data.return || null);
+        dispatch({ type: 'LOAD_DATA', data });
       } catch (e) {
         alert('Error al importar el archivo');
       }
@@ -333,7 +366,7 @@ const TravelPlanner = () => {
           <input
             type="text"
             value={tripTitle}
-            onChange={(e) => setTripTitle(e.target.value)}
+            onChange={(e) => dispatch({ type: 'SET_TITLE', title: e.target.value })}
             className="text-3xl font-bold mb-4 w-full border-none focus:outline-none"
             placeholder="Nombre del viaje"
           />
@@ -601,7 +634,7 @@ const TravelPlanner = () => {
               onEdit={() => handleEditCard(departure, 'departure')}
               color="bg-green-50 border-green-200"
               openMenuId={openMenuId}
-              setOpenMenuId={setOpenMenuId}
+              setOpenMenuId={handleSetOpenMenuId}
               cardId="departure"
             />
           )}
@@ -628,7 +661,7 @@ const TravelPlanner = () => {
                   color="bg-orange-50 border-orange-200"
                   isDragging={draggedIndex === index}
                   openMenuId={openMenuId}
-                  setOpenMenuId={setOpenMenuId}
+                  setOpenMenuId={handleSetOpenMenuId}
                   cardId={dest.id}
                 />
               </div>
@@ -657,7 +690,7 @@ const TravelPlanner = () => {
               )}
               color="bg-blue-50 border-blue-200"
               openMenuId={openMenuId}
-              setOpenMenuId={setOpenMenuId}
+              setOpenMenuId={handleSetOpenMenuId}
               cardId="return"
             />
           )}

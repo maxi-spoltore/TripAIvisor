@@ -1,6 +1,6 @@
 'use client';
 
-import { DragEvent, FormEvent, Fragment, useEffect, useState, useTransition } from 'react';
+import { DragEvent, FormEvent, Fragment, useCallback, useEffect, useReducer, useState, useTransition } from 'react';
 import { ArrowRightLeft, PlaneLanding, PlaneTakeoff, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
-import type { DestinationWithRelations, TransportWithLegs } from '@/types/database';
+import type { Destination, DestinationWithRelations, TransportWithLegs } from '@/types/database';
 import { DepartureCard } from './departure-card';
 import { DestinationCard } from './destination-card';
 import { DestinationModal, type DestinationModalSubmitInput } from './destination-modal';
@@ -51,6 +51,157 @@ function withNormalizedPositions(destinations: DestinationWithRelations[]): Dest
   }));
 }
 
+type DestinationListState = {
+  items: DestinationWithRelations[];
+  expandedCards: Record<number, boolean>;
+  openMenuId: number | null;
+  editingDestinationId: number | null;
+  pendingDeleteId: number | null;
+  draggedIndex: number | null;
+  errorMessage: string | null;
+};
+
+type DestinationListAction =
+  | { type: 'SET_ITEMS'; destinations: DestinationWithRelations[] }
+  | { type: 'ADD_ITEM'; destination: Destination; atPosition?: number }
+  | { type: 'REMOVE_ITEM'; destinationId: number }
+  | { type: 'UPDATE_ITEM'; destination: DestinationWithRelations }
+  | { type: 'REORDER'; fromIndex: number; toIndex: number }
+  | { type: 'ROLLBACK_ITEMS'; items: DestinationWithRelations[] }
+  | { type: 'DRAG_START'; index: number }
+  | { type: 'DRAG_END' }
+  | { type: 'TOGGLE_CARD'; destinationId: number }
+  | { type: 'OPEN_MENU'; destinationId: number | null }
+  | { type: 'CLOSE_MENU' }
+  | { type: 'OPEN_EDIT'; destinationId: number }
+  | { type: 'CLOSE_EDIT' }
+  | { type: 'REQUEST_DELETE'; destinationId: number }
+  | { type: 'CANCEL_DELETE' }
+  | { type: 'CONFIRM_DELETE' }
+  | { type: 'SET_ERROR'; message: string | null };
+
+function destinationListReducer(state: DestinationListState, action: DestinationListAction): DestinationListState {
+  switch (action.type) {
+    case 'SET_ITEMS':
+      return { ...state, items: sortByPosition(action.destinations) };
+
+    case 'ADD_ITEM': {
+      const newItem = { ...action.destination, transport: null, accommodation: null };
+      let nextItems: DestinationWithRelations[];
+      if (typeof action.atPosition === 'number') {
+        nextItems = [...state.items];
+        nextItems.splice(action.atPosition, 0, newItem);
+        nextItems = withNormalizedPositions(nextItems);
+      } else {
+        nextItems = sortByPosition([...state.items, newItem]);
+      }
+      return {
+        ...state,
+        items: nextItems,
+        expandedCards: { ...state.expandedCards, [action.destination.destination_id]: false }
+      };
+    }
+
+    case 'REMOVE_ITEM': {
+      const nextItems = withNormalizedPositions(
+        state.items.filter((item) => item.destination_id !== action.destinationId)
+      );
+      const nextExpandedCards = { ...state.expandedCards };
+      delete nextExpandedCards[action.destinationId];
+      return {
+        ...state,
+        items: nextItems,
+        expandedCards: nextExpandedCards,
+        openMenuId: null,
+        editingDestinationId:
+          state.editingDestinationId === action.destinationId ? null : state.editingDestinationId,
+        errorMessage: null
+      };
+    }
+
+    case 'UPDATE_ITEM':
+      return {
+        ...state,
+        items: sortByPosition(
+          state.items.map((item) =>
+            item.destination_id === action.destination.destination_id ? action.destination : item
+          )
+        ),
+        editingDestinationId: null
+      };
+
+    case 'REORDER': {
+      const reordered = [...state.items];
+      const [draggedItem] = reordered.splice(action.fromIndex, 1);
+      reordered.splice(action.toIndex, 0, draggedItem);
+      return {
+        ...state,
+        items: withNormalizedPositions(reordered),
+        draggedIndex: null,
+        openMenuId: null,
+        errorMessage: null
+      };
+    }
+
+    case 'ROLLBACK_ITEMS':
+      return { ...state, items: action.items };
+
+    case 'DRAG_START':
+      return { ...state, draggedIndex: action.index, openMenuId: null };
+
+    case 'DRAG_END':
+      return { ...state, draggedIndex: null };
+
+    case 'TOGGLE_CARD':
+      return {
+        ...state,
+        expandedCards: {
+          ...state.expandedCards,
+          [action.destinationId]: !state.expandedCards[action.destinationId]
+        }
+      };
+
+    case 'OPEN_MENU':
+      return { ...state, openMenuId: action.destinationId };
+
+    case 'CLOSE_MENU':
+      return { ...state, openMenuId: null };
+
+    case 'OPEN_EDIT':
+      return { ...state, openMenuId: null, errorMessage: null, editingDestinationId: action.destinationId };
+
+    case 'CLOSE_EDIT':
+      return { ...state, editingDestinationId: null };
+
+    case 'REQUEST_DELETE':
+      return { ...state, openMenuId: null, pendingDeleteId: action.destinationId };
+
+    case 'CANCEL_DELETE':
+      return { ...state, pendingDeleteId: null };
+
+    case 'CONFIRM_DELETE':
+      return { ...state, pendingDeleteId: null };
+
+    case 'SET_ERROR':
+      return { ...state, errorMessage: action.message };
+
+    default:
+      return state;
+  }
+}
+
+function createInitialState(destinations: DestinationWithRelations[]): DestinationListState {
+  return {
+    items: sortByPosition(destinations),
+    expandedCards: {},
+    openMenuId: null,
+    editingDestinationId: null,
+    pendingDeleteId: null,
+    draggedIndex: null,
+    errorMessage: null
+  };
+}
+
 export function DestinationList({
   locale,
   tripId,
@@ -65,28 +216,23 @@ export function DestinationList({
 }: DestinationListProps) {
   const tCommon = useTranslations('common');
   const tDestinations = useTranslations('destinations');
-  const [items, setItems] = useState<DestinationWithRelations[]>(() => sortByPosition(destinations));
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [editingDestinationId, setEditingDestinationId] = useState<number | null>(null);
-  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [state, dispatch] = useReducer(destinationListReducer, destinations, createInitialState);
+  const { items, expandedCards, openMenuId, editingDestinationId, pendingDeleteId, draggedIndex, errorMessage } = state;
   const [insertAtPosition, setInsertAtPosition] = useState<number | null>(null);
   const [newCity, setNewCity] = useState('');
   const [newDuration, setNewDuration] = useState('2');
   const [isStopover, setIsStopover] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    setItems(sortByPosition(destinations));
+    dispatch({ type: 'SET_ITEMS', destinations });
   }, [destinations]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target;
       if (target instanceof HTMLElement && !target.closest('.destination-action-menu')) {
-        setOpenMenuId(null);
+        dispatch({ type: 'CLOSE_MENU' });
       }
     };
 
@@ -94,9 +240,15 @@ export function DestinationList({
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+  const handleSetOpenMenuId = useCallback(
+    (destinationId: number | null) => {
+      dispatch(destinationId === null ? { type: 'CLOSE_MENU' } : { type: 'OPEN_MENU', destinationId });
+    },
+    []
+  );
+
   const handleDragStart = (event: DragEvent, index: number) => {
-    setDraggedIndex(index);
-    setOpenMenuId(null);
+    dispatch({ type: 'DRAG_START', index });
     setInsertAtPosition(null);
     event.dataTransfer.effectAllowed = 'move';
   };
@@ -114,27 +266,26 @@ export function DestinationList({
     }
 
     const previousItems = items;
-    const reorderedItems = [...items];
-    const [draggedItem] = reorderedItems.splice(draggedIndex, 1);
-    reorderedItems.splice(dropIndex, 0, draggedItem);
-
-    const normalizedItems = withNormalizedPositions(reorderedItems);
-    setItems(normalizedItems);
-    setDraggedIndex(null);
-    setOpenMenuId(null);
+    dispatch({ type: 'REORDER', fromIndex: draggedIndex, toIndex: dropIndex });
     setInsertAtPosition(null);
-    setErrorMessage(null);
 
     startTransition(async () => {
       try {
+        const reordered = [...previousItems];
+        const [draggedItem] = reordered.splice(draggedIndex, 1);
+        reordered.splice(dropIndex, 0, draggedItem);
+        const normalizedItems = withNormalizedPositions(reordered);
         await reorderDestinationsAction({
           locale,
           tripId,
           orderedIds: normalizedItems.map((destination) => destination.destination_id)
         });
       } catch {
-        setItems(previousItems);
-        setErrorMessage(locale === 'es' ? 'No se pudo reordenar los destinos.' : 'Could not reorder destinations.');
+        dispatch({ type: 'ROLLBACK_ITEMS', items: previousItems });
+        dispatch({
+          type: 'SET_ERROR',
+          message: locale === 'es' ? 'No se pudo reordenar los destinos.' : 'Could not reorder destinations.'
+        });
       }
     });
   };
@@ -144,14 +295,14 @@ export function DestinationList({
 
     const trimmedCity = newCity.trim();
     if (!trimmedCity) {
-      setErrorMessage(locale === 'es' ? 'La ciudad es obligatoria.' : 'City is required.');
+      dispatch({ type: 'SET_ERROR', message: locale === 'es' ? 'La ciudad es obligatoria.' : 'City is required.' });
       return;
     }
 
     const parsedDuration = Number(newDuration);
     const duration = Number.isFinite(parsedDuration) ? parsedDuration : isStopover ? 0 : 2;
 
-    setErrorMessage(null);
+    dispatch({ type: 'SET_ERROR', message: null });
 
     startTransition(async () => {
       try {
@@ -164,50 +315,23 @@ export function DestinationList({
           isStopover
         });
 
-        setItems((previousItems) => {
-          const nextItems = [...previousItems];
-          const normalizedDestination = {
-            ...createdDestination,
-            transport: null,
-            accommodation: null
-          };
-
-          if (typeof atPosition === 'number') {
-            nextItems.splice(atPosition, 0, normalizedDestination);
-            return withNormalizedPositions(nextItems);
-          }
-
-          return sortByPosition([...previousItems, normalizedDestination]);
-        });
-        setExpandedCards((previousCards) => ({
-          ...previousCards,
-          [createdDestination.destination_id]: false
-        }));
+        dispatch({ type: 'ADD_ITEM', destination: createdDestination, atPosition });
         setInsertAtPosition(null);
         setNewCity('');
         setNewDuration('2');
         setIsStopover(false);
       } catch {
-        setErrorMessage(locale === 'es' ? 'No se pudo agregar el destino.' : 'Could not add destination.');
+        dispatch({
+          type: 'SET_ERROR',
+          message: locale === 'es' ? 'No se pudo agregar el destino.' : 'Could not add destination.'
+        });
       }
     });
   };
 
   const handleDeleteDestination = (destinationId: number) => {
     const previousItems = items;
-    setErrorMessage(null);
-    setItems((currentItems) =>
-      withNormalizedPositions(currentItems.filter((item) => item.destination_id !== destinationId))
-    );
-    setExpandedCards((previousCards) => {
-      const nextCards = { ...previousCards };
-      delete nextCards[destinationId];
-      return nextCards;
-    });
-    setOpenMenuId(null);
-    if (editingDestinationId === destinationId) {
-      setEditingDestinationId(null);
-    }
+    dispatch({ type: 'REMOVE_ITEM', destinationId });
 
     startTransition(async () => {
       try {
@@ -217,15 +341,17 @@ export function DestinationList({
           destinationId
         });
       } catch {
-        setItems(previousItems);
-        setErrorMessage(locale === 'es' ? 'No se pudo eliminar el destino.' : 'Could not delete destination.');
+        dispatch({ type: 'ROLLBACK_ITEMS', items: previousItems });
+        dispatch({
+          type: 'SET_ERROR',
+          message: locale === 'es' ? 'No se pudo eliminar el destino.' : 'Could not delete destination.'
+        });
       }
     });
   };
 
   const handleRequestDeleteDestination = (destinationId: number) => {
-    setOpenMenuId(null);
-    setPendingDeleteId(destinationId);
+    dispatch({ type: 'REQUEST_DELETE', destinationId });
   };
 
   const handleConfirmDeleteDestination = () => {
@@ -234,25 +360,20 @@ export function DestinationList({
     }
 
     const destinationId = pendingDeleteId;
-    setPendingDeleteId(null);
+    dispatch({ type: 'CONFIRM_DELETE' });
     handleDeleteDestination(destinationId);
   };
 
   const handleToggleCard = (destinationId: number) => {
-    setExpandedCards((previousCards) => ({
-      ...previousCards,
-      [destinationId]: !previousCards[destinationId]
-    }));
+    dispatch({ type: 'TOGGLE_CARD', destinationId });
   };
 
   const handleOpenModal = (destinationId: number) => {
-    setOpenMenuId(null);
-    setErrorMessage(null);
-    setEditingDestinationId(destinationId);
+    dispatch({ type: 'OPEN_EDIT', destinationId });
   };
 
   const handleSaveDestinationDetails = (payload: DestinationModalSubmitInput) => {
-    setErrorMessage(null);
+    dispatch({ type: 'SET_ERROR', message: null });
 
     startTransition(async () => {
       try {
@@ -269,16 +390,12 @@ export function DestinationList({
           accommodation: payload.accommodation
         });
 
-        setItems((previousItems) =>
-          sortByPosition(
-            previousItems.map((item) =>
-              item.destination_id === updatedDestination.destination_id ? updatedDestination : item
-            )
-          )
-        );
-        setEditingDestinationId(null);
+        dispatch({ type: 'UPDATE_ITEM', destination: updatedDestination });
       } catch {
-        setErrorMessage(locale === 'es' ? 'No se pudo guardar el destino.' : 'Could not save destination.');
+        dispatch({
+          type: 'SET_ERROR',
+          message: locale === 'es' ? 'No se pudo guardar el destino.' : 'Could not save destination.'
+        });
       }
     });
   };
@@ -468,7 +585,7 @@ export function DestinationList({
                     onEdit={() => handleOpenModal(destination.destination_id)}
                     onToggle={() => handleToggleCard(destination.destination_id)}
                     openMenuId={openMenuId}
-                    setOpenMenuId={setOpenMenuId}
+                    setOpenMenuId={handleSetOpenMenuId}
                     startDate={startDate}
                     travelDays={travelDays ?? 0}
                   />
@@ -503,7 +620,7 @@ export function DestinationList({
         destination={editingDestination}
         isPending={isPending}
         locale={locale}
-        onCancel={() => setEditingDestinationId(null)}
+        onCancel={() => dispatch({ type: 'CLOSE_EDIT' })}
         onSave={handleSaveDestinationDetails}
         open={editingDestination !== null}
       />
@@ -512,7 +629,7 @@ export function DestinationList({
         open={pendingDeleteId !== null}
         onOpenChange={(open) => {
           if (!open) {
-            setPendingDeleteId(null);
+            dispatch({ type: 'CANCEL_DELETE' });
           }
         }}
       >
@@ -522,7 +639,7 @@ export function DestinationList({
             <DialogDescription>{tDestinations('confirmDeleteDestination')}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button onClick={() => setPendingDeleteId(null)} variant="outline">
+            <Button onClick={() => dispatch({ type: 'CANCEL_DELETE' })} variant="outline">
               {tCommon('cancel')}
             </Button>
             <Button onClick={handleConfirmDeleteDestination} variant="destructive">
