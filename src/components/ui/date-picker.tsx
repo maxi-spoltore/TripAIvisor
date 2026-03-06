@@ -5,7 +5,7 @@ import { enUS, es } from 'date-fns/locale';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/utils/dates';
 
@@ -28,7 +28,16 @@ function toDate(dateStr: string): Date | undefined {
     return undefined;
   }
 
-  return new Date(year, month - 1, day);
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) {
+    return undefined;
+  }
+
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return undefined;
+  }
+
+  return date;
 }
 
 function fromDate(date: Date): string {
@@ -55,13 +64,8 @@ export function DatePicker({ value, onChange, disabled = false, locale, placehol
   };
 
   return (
-    <Popover
-      align="start"
-      className="w-[min(22rem,calc(100vw-2rem))] p-1"
-      disabled={disabled}
-      onOpenChange={setOpen}
-      open={open}
-      trigger={
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger asChild>
         <Button
           aria-expanded={open}
           aria-haspopup="dialog"
@@ -78,15 +82,17 @@ export function DatePicker({ value, onChange, disabled = false, locale, placehol
           <CalendarIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-brand-route" />
           <span className="min-w-0 flex-1 truncate">{displayValue ?? placeholder ?? ''}</span>
         </Button>
-      }
-    >
-      <Calendar
-        defaultMonth={selectedDate}
-        locale={dayPickerLocale}
-        mode="single"
-        onSelect={handleSelect}
-        selected={selectedDate}
-      />
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[min(22rem,calc(100vw-2rem))] p-1">
+        <Calendar
+          defaultMonth={selectedDate}
+          initialFocus
+          locale={dayPickerLocale}
+          mode="single"
+          onSelect={handleSelect}
+          selected={selectedDate}
+        />
+      </PopoverContent>
     </Popover>
   );
 }

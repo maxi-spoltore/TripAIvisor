@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bus, ChevronDown, ChevronUp, Hotel, Plane, StickyNote, Train, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -198,34 +199,6 @@ export function DestinationModal({
     setErrorMessage(null);
   }, [destination, open]);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isPending) {
-        onCancel();
-      }
-    };
-
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [open, isPending, onCancel]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, [open]);
-
   const strings = useMemo(
     () => ({
       cityLabel: locale === 'es' ? 'Ciudad *' : 'City *',
@@ -269,7 +242,7 @@ export function DestinationModal({
     [locale]
   );
 
-  if (!open || !destination || !formState) {
+  if (!destination || !formState) {
     return null;
   }
 
@@ -325,24 +298,22 @@ export function DestinationModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-canvas/80 p-4 backdrop-blur-md animate-fade-in"
-      onClick={() => {
-        if (!isPending) {
+    <Dialog
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && !isPending) {
           onCancel();
         }
       }}
+      open={open}
     >
-      <div
-        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface text-foreground-primary shadow-modal animate-scale-in sm:max-h-[85vh] max-sm:h-screen max-sm:max-h-screen max-sm:rounded-none"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-border p-6">
-          <h2 className="text-xl font-bold">
+      <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden p-0 max-sm:h-screen max-sm:max-h-screen max-sm:rounded-none">
+        <DialogHeader className="mb-0 flex-row items-center justify-between gap-3 border-b border-border px-6 py-5">
+          <DialogTitle className="text-xl font-bold">
             {locale === 'es' ? 'Editar' : 'Edit'} —{' '}
             {formState.city || (locale === 'es' ? 'Destino' : 'Destination')}
-          </h2>
+          </DialogTitle>
           <button
+            aria-label="Close"
             type="button"
             className="rounded-lg p-2 text-foreground-muted transition-colors hover:bg-subtle hover:text-foreground-secondary"
             onClick={() => {
@@ -350,11 +321,10 @@ export function DestinationModal({
                 onCancel();
               }
             }}
-            aria-label="Close"
           >
             <X className="h-5 w-5" />
           </button>
-        </div>
+        </DialogHeader>
 
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
           <div className="space-y-4">
@@ -827,7 +797,7 @@ export function DestinationModal({
           {errorMessage ? <p className="text-sm text-danger">{errorMessage}</p> : null}
         </div>
 
-        <div className="sticky bottom-0 flex gap-3 border-t border-border bg-surface p-4">
+        <DialogFooter className="sticky bottom-0 mt-0 flex-row gap-3 border-t border-border bg-surface p-4 sm:justify-start">
           <Button className="flex-1" disabled={isPending} onClick={handleSubmit}>
             {isPending ? (
               <>
@@ -841,8 +811,8 @@ export function DestinationModal({
           <Button className="flex-1" disabled={isPending} onClick={onCancel} variant="outline">
             {strings.cancel}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

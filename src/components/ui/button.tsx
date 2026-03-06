@@ -1,35 +1,38 @@
-import { ButtonHTMLAttributes } from 'react';
+import * as React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'default' | 'outline' | 'ghost' | 'destructive';
-  size?: 'default' | 'sm' | 'lg';
-};
+const buttonVariants = cva(
+  'inline-flex items-center justify-center rounded-md font-semibold transition-[background-color,color,border-color,box-shadow,transform] duration-base ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background enabled:active:translate-y-px enabled:active:shadow-none disabled:pointer-events-none disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground shadow-card hover:bg-brand-primary-hover',
+        outline: 'border border-input bg-surface text-foreground-primary hover:bg-muted',
+        ghost: 'bg-transparent text-foreground-secondary hover:bg-muted hover:text-foreground-primary',
+        destructive: 'bg-destructive text-destructive-foreground shadow-card hover:brightness-95'
+      },
+      size: {
+        default: 'h-11 px-4 text-body-sm',
+        sm: 'h-11 px-3.5 text-body-sm',
+        lg: 'h-12 px-8 text-body-md'
+      }
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default'
+    }
+  }
+);
 
-const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
-  default: 'bg-brand-primary text-white shadow-card hover:bg-brand-primary-hover',
-  outline: 'border border-border bg-surface text-foreground-primary hover:bg-subtle',
-  ghost: 'bg-transparent text-foreground-secondary hover:bg-subtle hover:text-foreground-primary',
-  destructive: 'bg-danger text-white shadow-card hover:brightness-95'
-};
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {}
 
-const sizeClasses: Record<NonNullable<ButtonProps['size']>, string> = {
-  default: 'h-11 px-4 text-sm leading-5',
-  sm: 'h-11 px-3.5 text-[0.8125rem] leading-[1.125rem]',
-  lg: 'h-12 px-8 text-[0.9375rem] leading-[1.375rem]'
-};
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, size, type = 'button', variant, ...props }, ref) => (
+    <button className={cn(buttonVariants({ variant, size, className }))} ref={ref} type={type} {...props} />
+  )
+);
 
-export function Button({ className, variant = 'default', size = 'default', type = 'button', ...props }: ButtonProps) {
-  return (
-    <button
-      type={type}
-      className={cn(
-        'inline-flex items-center justify-center rounded-md font-semibold transition-[background-color,color,border-color,box-shadow,transform] duration-base ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas enabled:active:translate-y-px disabled:pointer-events-none disabled:opacity-50',
-        variantClasses[variant],
-        sizeClasses[size],
-        className
-      )}
-      {...props}
-    />
-  );
-}
+Button.displayName = 'Button';

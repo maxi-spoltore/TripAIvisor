@@ -1,185 +1,145 @@
 'use client';
 
 import {
-  ButtonHTMLAttributes,
-  createContext,
-  HTMLAttributes,
-  ReactNode,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState
-} from 'react';
-import { Check, ChevronDown } from 'lucide-react';
+  Check,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
+import * as React from 'react';
+import * as SelectPrimitive from '@radix-ui/react-select';
 import { cn } from '@/lib/utils';
 
-type SelectContextValue = {
-  value?: string;
-  onValueChange?: (value: string) => void;
-  open: boolean;
-  setOpen: (value: boolean) => void;
-  listboxId: string;
-};
+const Select = SelectPrimitive.Root;
+const SelectGroup = SelectPrimitive.Group;
+const SelectValue = SelectPrimitive.Value;
 
-const SelectContext = createContext<SelectContextValue | null>(null);
+const SelectTrigger = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Trigger
+    className={cn(
+      'flex h-11 w-full items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-body-sm text-foreground-primary transition-[border-color,box-shadow,background-color] duration-base ease-standard data-[placeholder]:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:bg-subtle disabled:opacity-60 [&>span]:truncate',
+      className
+    )}
+    ref={ref}
+    {...props}
+  >
+    {children}
+    <SelectPrimitive.Icon asChild>
+      <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 text-foreground-muted" />
+    </SelectPrimitive.Icon>
+  </SelectPrimitive.Trigger>
+));
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
-type SelectProps = {
-  value?: string;
-  onValueChange?: (value: string) => void;
-  children: ReactNode;
-};
+const SelectScrollUpButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollUpButton
+    className={cn('flex cursor-default items-center justify-center py-1', className)}
+    ref={ref}
+    {...props}
+  >
+    <ChevronUp aria-hidden="true" className="h-4 w-4 text-foreground-muted" />
+  </SelectPrimitive.ScrollUpButton>
+));
+SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
 
-export function Select({ value, onValueChange, children }: SelectProps) {
-  const [open, setOpen] = useState(false);
-  const listboxId = useId();
-  const rootRef = useRef<HTMLDivElement>(null);
+const SelectScrollDownButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollDownButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollDownButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollDownButton
+    className={cn('flex cursor-default items-center justify-center py-1', className)}
+    ref={ref}
+    {...props}
+  >
+    <ChevronDown aria-hidden="true" className="h-4 w-4 text-foreground-muted" />
+  </SelectPrimitive.ScrollDownButton>
+));
+SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayName;
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const handleClickOutside = (event: MouseEvent) => {
-      const targetNode = event.target as Node;
-      if (!rootRef.current?.contains(targetNode)) {
-        setOpen(false);
-      }
-    };
-
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEsc);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEsc);
-    };
-  }, [open]);
-
-  const context = useMemo(
-    () => ({ value, onValueChange, open, setOpen, listboxId }),
-    [listboxId, onValueChange, open, value]
-  );
-
-  return (
-    <SelectContext.Provider value={context}>
-      <div className="relative w-full" ref={rootRef}>
-        {children}
-      </div>
-    </SelectContext.Provider>
-  );
-}
-
-export function SelectTrigger({
-  className,
-  children,
-  onClick,
-  disabled,
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement>) {
-  const context = useContext(SelectContext);
-
-  return (
-    <button
-      aria-controls={context?.listboxId}
-      aria-expanded={context?.open}
-      aria-haspopup="listbox"
-      type="button"
-      disabled={disabled}
+const SelectContent = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
+>(({ className, children, position = 'popper', ...props }, ref) => (
+  <SelectPrimitive.Portal>
+    <SelectPrimitive.Content
       className={cn(
-        'flex h-11 w-full items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-body-sm text-foreground-primary transition-[border-color,box-shadow,background-color] duration-base ease-standard focus-visible:border-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:bg-subtle disabled:opacity-60',
+        'relative z-50 max-h-72 min-w-[8rem] overflow-hidden rounded-md border border-border bg-elevated text-foreground-primary shadow-floating data-[state=open]:animate-fade-in',
+        position === 'popper' &&
+          'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
         className
       )}
-      onClick={(event) => {
-        onClick?.(event);
-        if (event.defaultPrevented || disabled) {
-          return;
-        }
-
-        context?.setOpen(!context.open);
-      }}
+      position={position}
+      ref={ref}
       {...props}
     >
-      <span className="flex min-w-0 flex-1 items-center gap-2 truncate text-left">{children}</span>
-      <ChevronDown
-        aria-hidden="true"
+      <SelectScrollUpButton />
+      <SelectPrimitive.Viewport
         className={cn(
-          'h-4 w-4 shrink-0 text-foreground-muted transition-transform duration-fast ease-standard',
-          context?.open ? 'rotate-180' : ''
+          'p-1',
+          position === 'popper' &&
+            'w-full min-w-[var(--radix-select-trigger-width)] max-h-[var(--radix-select-content-available-height)]'
         )}
-      />
-    </button>
-  );
-}
+      >
+        {children}
+      </SelectPrimitive.Viewport>
+      <SelectScrollDownButton />
+    </SelectPrimitive.Content>
+  </SelectPrimitive.Portal>
+));
+SelectContent.displayName = SelectPrimitive.Content.displayName;
 
-export function SelectValue({ placeholder }: { placeholder?: string }) {
-  const context = useContext(SelectContext);
-  const hasValue = Boolean(context?.value);
+const SelectLabel = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Label>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Label className={cn('px-2 py-1.5 text-body-sm font-medium', className)} ref={ref} {...props} />
+));
+SelectLabel.displayName = SelectPrimitive.Label.displayName;
 
-  return (
-    <span className={cn('block truncate', !hasValue && 'text-foreground-muted')}>
-      {context?.value ?? placeholder ?? ''}
+const SelectItem = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Item
+    className={cn(
+      'relative flex w-full cursor-default select-none items-center rounded-sm py-2 pl-8 pr-2.5 text-body-sm text-foreground-secondary outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-subtle data-[highlighted]:text-foreground-primary',
+      className
+    )}
+    ref={ref}
+    {...props}
+  >
+    <span className="absolute left-2 flex h-4 w-4 items-center justify-center">
+      <SelectPrimitive.ItemIndicator>
+        <Check aria-hidden="true" className="h-4 w-4 text-brand-primary" />
+      </SelectPrimitive.ItemIndicator>
     </span>
-  );
-}
+    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+  </SelectPrimitive.Item>
+));
+SelectItem.displayName = SelectPrimitive.Item.displayName;
 
-export function SelectContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  const context = useContext(SelectContext);
+const SelectSeparator = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Separator className={cn('-mx-1 my-1 h-px bg-border', className)} ref={ref} {...props} />
+));
+SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
 
-  if (!context || !context.open) {
-    return null;
-  }
-
-  return (
-    <div
-      className={cn(
-        'absolute left-0 top-[calc(100%+0.5rem)] z-40 max-h-72 w-full min-w-[10rem] overflow-y-auto rounded-md border border-border bg-elevated p-1 shadow-floating animate-fade-in',
-        className
-      )}
-      id={context.listboxId}
-      role="listbox"
-      {...props}
-    />
-  );
-}
-
-type SelectItemProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  value: string;
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton
 };
-
-export function SelectItem({ className, value, children, onClick, ...props }: SelectItemProps) {
-  const context = useContext(SelectContext);
-  const isSelected = context?.value === value;
-
-  return (
-    <button
-      type="button"
-      aria-selected={isSelected}
-      role="option"
-      className={cn(
-        'flex w-full items-center justify-between gap-2 rounded-sm px-2.5 py-2 text-left text-body-sm text-foreground-secondary transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
-        isSelected && 'bg-brand-accent-soft text-foreground-primary',
-        className
-      )}
-      onClick={(event) => {
-        onClick?.(event);
-        if (event.defaultPrevented) {
-          return;
-        }
-
-        context?.onValueChange?.(value);
-        context?.setOpen(false);
-      }}
-      {...props}
-    >
-      {children}
-      {isSelected ? <Check aria-hidden="true" className="h-4 w-4 shrink-0 text-brand-primary" /> : null}
-    </button>
-  );
-}

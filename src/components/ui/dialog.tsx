@@ -1,150 +1,90 @@
 'use client';
 
-import { HTMLAttributes, ReactNode, useEffect, useRef } from 'react';
+import * as React from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { cn } from '@/lib/utils';
 
-type DialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  children: ReactNode;
-};
+const Dialog = DialogPrimitive.Root;
+const DialogTrigger = DialogPrimitive.Trigger;
+const DialogPortal = DialogPrimitive.Portal;
+const DialogClose = DialogPrimitive.Close;
 
-export function Dialog({ open, onOpenChange, children }: DialogProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
+const DialogOverlay = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Overlay
+    className={cn(
+      'fixed inset-0 z-50 bg-canvas/80 backdrop-blur-md data-[state=open]:animate-fade-in',
+      className
+    )}
+    ref={ref}
+    {...props}
+  />
+));
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onOpenChange(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [open, onOpenChange]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const overlay = overlayRef.current;
-    const dialog = overlay?.querySelector<HTMLElement>('[role="dialog"]');
-    const previousActiveElement =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    const getFocusableElements = () => {
-      if (!dialog) {
-        return [];
-      }
-
-      return Array.from(
-        dialog.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter((element) => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true');
-    };
-
-    requestAnimationFrame(() => {
-      const focusableElements = getFocusableElements();
-      if (focusableElements.length > 0) {
-        focusableElements[0].focus();
-        return;
-      }
-
-      dialog?.focus();
-    });
-
-    const handleTab = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab' || !dialog) {
-        return;
-      }
-
-      const focusableElements = getFocusableElements();
-      if (focusableElements.length === 0) {
-        event.preventDefault();
-        dialog.focus();
-        return;
-      }
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      if (event.shiftKey) {
-        if (document.activeElement === firstElement || document.activeElement === dialog) {
-          event.preventDefault();
-          lastElement.focus();
-        }
-        return;
-      }
-
-      if (document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    };
-
-    document.addEventListener('keydown', handleTab);
-
-    return () => {
-      document.removeEventListener('keydown', handleTab);
-      document.body.style.overflow = originalOverflow;
-      previousActiveElement?.focus();
-    };
-  }, [open]);
-
-  if (!open) {
-    return null;
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-canvas/80 p-4 backdrop-blur-md animate-fade-in sm:p-6"
-      onClick={() => onOpenChange(false)}
-      ref={overlayRef}
-    >
-      <div className="flex min-h-full items-center justify-center">
-        <div className="w-full animate-slide-up sm:animate-scale-in" onClick={(event) => event.stopPropagation()}>
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function DialogContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      aria-modal="true"
+const DialogContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
       className={cn(
-        'max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-surface p-5 text-foreground-primary shadow-modal sm:max-h-[calc(100dvh-4rem)] sm:p-6',
+        'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border bg-surface p-5 text-foreground-primary shadow-modal data-[state=open]:animate-slide-up sm:max-h-[calc(100dvh-4rem)] sm:p-6 sm:data-[state=open]:animate-scale-in max-sm:max-h-[calc(100dvh-1.5rem)]',
         className
       )}
-      role="dialog"
-      tabIndex={-1}
+      ref={ref}
       {...props}
     />
-  );
-}
+  </DialogPortal>
+));
+DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-export function DialogHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('mb-4 flex flex-col gap-1.5', className)} {...props} />;
-}
+const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn('mb-4 flex flex-col gap-1.5', className)} {...props} />
+);
+DialogHeader.displayName = 'DialogHeader';
 
-export function DialogFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)} {...props} />;
-}
+const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn('mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)} {...props} />
+);
+DialogFooter.displayName = 'DialogFooter';
 
-export function DialogTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h2 className={cn('text-title-md font-semibold text-foreground-primary', className)} {...props} />;
-}
+const DialogTitle = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Title
+    className={cn('text-title-md font-semibold text-foreground-primary', className)}
+    ref={ref}
+    {...props}
+  />
+));
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
-export function DialogDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn('text-body-sm text-foreground-secondary', className)} {...props} />;
-}
+const DialogDescription = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Description
+    className={cn('text-body-sm text-foreground-secondary', className)}
+    ref={ref}
+    {...props}
+  />
+));
+DialogDescription.displayName = DialogPrimitive.Description.displayName;
+
+export {
+  Dialog,
+  DialogTrigger,
+  DialogPortal,
+  DialogClose,
+  DialogOverlay,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription
+};

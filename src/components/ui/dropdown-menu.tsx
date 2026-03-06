@@ -1,73 +1,68 @@
 'use client';
 
-import {
-  createContext,
-  HTMLAttributes,
-  ReactNode,
-  useContext,
-  useMemo,
-  useState
-} from 'react';
+import * as React from 'react';
+import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { cn } from '@/lib/utils';
 
-type DropdownMenuContextValue = {
-  open: boolean;
-  setOpen: (value: boolean) => void;
-};
+const DropdownMenu = DropdownMenuPrimitive.Root;
+const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
+const DropdownMenuGroup = DropdownMenuPrimitive.Group;
+const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
+const DropdownMenuSub = DropdownMenuPrimitive.Sub;
+const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
 
-const DropdownMenuContext = createContext<DropdownMenuContextValue | null>(null);
+const DropdownMenuContent = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
+>(({ className, sideOffset = 6, ...props }, ref) => (
+  <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Content
+      className={cn(
+        'z-50 min-w-32 overflow-hidden rounded-md border border-border bg-elevated p-1 text-foreground-primary shadow-floating data-[state=open]:animate-fade-in',
+        className
+      )}
+      ref={ref}
+      sideOffset={sideOffset}
+      {...props}
+    />
+  </DropdownMenuPrimitive.Portal>
+));
+DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
-export function DropdownMenu({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const context = useMemo(() => ({ open, setOpen }), [open]);
-
-  return (
-    <DropdownMenuContext.Provider value={context}>
-      <div className="relative inline-block">{children}</div>
-    </DropdownMenuContext.Provider>
-  );
-}
-
-export function DropdownMenuTrigger({ children }: { children: ReactNode }) {
-  const context = useContext(DropdownMenuContext);
-  return (
-    <button type="button" onClick={() => context?.setOpen(!context.open)}>
-      {children}
-    </button>
-  );
-}
-
-export function DropdownMenuContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  const context = useContext(DropdownMenuContext);
-
-  if (!context?.open) {
-    return null;
+const DropdownMenuItem = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
+    inset?: boolean;
   }
+>(({ className, inset, ...props }, ref) => (
+  <DropdownMenuPrimitive.Item
+    className={cn(
+      'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm text-foreground-secondary outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-subtle data-[highlighted]:text-foreground-primary',
+      inset && 'pl-8',
+      className
+    )}
+    ref={ref}
+    {...props}
+  />
+));
+DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName;
 
-  return (
-    <div
-      className={cn(
-        'absolute right-0 z-10 mt-2 min-w-32 rounded-md border border-border bg-elevated p-1 shadow-floating',
-        className
-      )}
-      {...props}
-    />
-  );
-}
+const DropdownMenuSeparator = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+  <DropdownMenuPrimitive.Separator className={cn('-mx-1 my-1 h-px bg-border', className)} ref={ref} {...props} />
+));
+DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName;
 
-export function DropdownMenuItem({ className, ...props }: HTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        'flex w-full rounded-sm px-2 py-1.5 text-left text-sm text-foreground-secondary transition-colors hover:bg-subtle hover:text-foreground-primary',
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-export function DropdownMenuSeparator({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('my-1 h-px bg-border', className)} {...props} />;
-}
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuGroup,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuRadioGroup
+};

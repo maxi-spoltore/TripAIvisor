@@ -10,32 +10,28 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        background: 'var(--background)',
+        card: {
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)'
+        },
+        popover: {
+          DEFAULT: 'var(--popover)',
+          foreground: 'var(--popover-foreground)'
+        },
         canvas: 'var(--bg-canvas)',
         surface: 'var(--bg-surface)',
         elevated: 'var(--bg-elevated)',
         subtle: 'var(--bg-subtle)',
         foreground: {
+          DEFAULT: 'var(--foreground)',
           primary: 'var(--fg-primary)',
           secondary: 'var(--fg-secondary)',
           muted: 'var(--fg-muted)'
         },
-        border: {
-          DEFAULT: 'var(--border-default)',
-          strong: 'var(--border-strong)'
-        },
-        brand: {
-          primary: 'var(--brand-primary)',
-          'primary-hover': 'var(--brand-primary-hover)',
-          accent: 'var(--brand-accent)',
-          'accent-soft': 'var(--brand-accent-soft)',
-          route: 'var(--brand-route)'
-        },
-        route: 'var(--brand-route)',
-        success: 'var(--success)',
-        warning: 'var(--warning)',
-        danger: 'var(--danger)',
-        info: 'var(--info)',
         primary: {
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--primary-foreground)',
           50: '#f0fdfa',
           100: '#ccfbf1',
           200: '#99f6e4',
@@ -48,14 +44,46 @@ const config: Config = {
           900: '#134e4a',
           950: '#042f2e'
         },
+        secondary: {
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)'
+        },
+        muted: {
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)'
+        },
         accent: {
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)',
           50: '#fffbeb',
           100: '#fef3c7',
           200: '#fde68a',
           300: '#fcd34d',
           400: '#fbbf24',
           500: '#f59e0b'
-        }
+        },
+        destructive: {
+          DEFAULT: 'var(--destructive)',
+          foreground: 'var(--destructive-foreground)'
+        },
+        border: {
+          DEFAULT: 'var(--border-default)',
+          strong: 'var(--border-strong)'
+        },
+        input: 'var(--input)',
+        ring: 'var(--ring)',
+        brand: {
+          primary: 'var(--brand-primary)',
+          'primary-hover': 'var(--brand-primary-hover)',
+          accent: 'var(--brand-accent)',
+          'accent-soft': 'var(--brand-accent-soft)',
+          route: 'var(--brand-route)'
+        },
+        route: 'var(--brand-route)',
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        danger: 'var(--danger)',
+        info: 'var(--info)'
       },
       fontFamily: {
         sans: ['var(--font-manrope)', ...defaultTheme.fontFamily.sans],

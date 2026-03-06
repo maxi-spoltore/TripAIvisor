@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { createShareLinkAction } from '@/app/actions/shares';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
@@ -29,34 +30,6 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
       setErrorMessage(null);
     }
   }, [open]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isPending) {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [isPending, onClose, open]);
 
   const handleGenerateLink = () => {
     setErrorMessage(null);
@@ -85,30 +58,23 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
     }
   };
 
-  if (!open) {
-    return null;
-  }
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-canvas/80 p-4 backdrop-blur-md animate-fade-in"
-      onClick={() => {
-        if (!isPending) {
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && !isPending) {
           onClose();
         }
       }}
     >
-      <div
-        className="w-full max-w-xl animate-scale-in rounded-2xl border border-border bg-surface p-6 text-foreground-primary shadow-modal"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="mb-4">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
             <Share2 className="h-5 w-5 text-brand-primary" />
             {tShare('title')}
-          </h2>
-          <p className="mt-1 text-sm text-foreground-muted">{tShare('viewOnly')}</p>
-        </div>
+          </DialogTitle>
+          <DialogDescription>{tShare('viewOnly')}</DialogDescription>
+        </DialogHeader>
 
         {!shareUrl ? (
           <Button className="w-full" disabled={isPending} onClick={handleGenerateLink}>
@@ -143,12 +109,12 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
 
         {errorMessage ? <p className="mt-3 text-sm text-danger">{errorMessage}</p> : null}
 
-        <div className="mt-6 flex justify-end">
+        <DialogFooter>
           <Button disabled={isPending} onClick={onClose} type="button" variant="outline">
             {locale === 'es' ? 'Cerrar' : 'Close'}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

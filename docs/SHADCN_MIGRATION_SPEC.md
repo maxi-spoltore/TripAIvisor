@@ -6,14 +6,187 @@ Migrate all custom UI primitives in `src/components/ui/` to shadcn/ui components
 
 ---
 
+## Phase 1 Implementation Summary (Completed March 6, 2026)
+
+Phase 1 (`Step 0` + `Step 1` to `Step 5`) has been implemented and validated.
+
+### Completed Scope
+
+- `Step 0: Prep`
+  - Added `clsx` as a direct dependency in `package.json` and `package-lock.json`.
+  - Updated `src/lib/utils.ts` to shadcn-standard `cn(...inputs)` using `clsx` + `twMerge`.
+  - Added a full shadcn semantic CSS variable alias bridge to `src/app/globals.css` in both light and dark theme roots:
+    - `--background`, `--foreground`
+    - `--card`, `--card-foreground`
+    - `--popover`, `--popover-foreground`
+    - `--primary`, `--primary-foreground`
+    - `--secondary`, `--secondary-foreground`
+    - `--muted`, `--muted-foreground`
+    - `--accent`, `--accent-foreground`
+    - `--destructive`, `--destructive-foreground`
+    - `--border`, `--input`, `--ring`, `--radius`
+  - Added semantic Tailwind color mappings in `tailwind.config.ts` so shadcn classnames resolve correctly:
+    - `background`, `card`, `popover`, `foreground.DEFAULT`
+    - `primary.DEFAULT/foreground` (while preserving existing numeric primary scale)
+    - `secondary`, `muted`, `accent.DEFAULT/foreground` (while preserving existing numeric accent scale)
+    - `destructive`, `input`, `ring`
+
+- `Step 1: Button`
+  - Replaced `src/components/ui/button.tsx` with a shadcn-style CVA implementation.
+  - Preserved the existing external API (`variant`, `size`, native button props).
+  - Preserved requested variants: `default`, `outline`, `ghost`, `destructive`.
+  - Preserved requested sizes:
+    - `sm`: `h-11 px-3.5`
+    - `default`: `h-11 px-4`
+    - `lg`: `h-12 px-8`
+  - Preserved active press behavior (`active:translate-y-px` and no active shadow).
+  - Preserved disabled behavior (`disabled:pointer-events-none disabled:opacity-50`).
+
+- `Step 2: Card`
+  - Replaced `src/components/ui/card.tsx` with shadcn-style `forwardRef` primitives:
+    - `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`.
+  - Preserved hover elevation and motion behavior.
+  - Preserved padding contract (`p-5 sm:p-6`, content/footer top padding handling).
+
+- `Step 3: Input`
+  - Replaced `src/components/ui/input.tsx` with shadcn-style `forwardRef` primitive.
+  - Preserved `h-11` sizing.
+  - Updated focus ring to semantic `ring-ring` + `ring-offset-background` (mapped through aliases).
+  - Preserved file input styling and disabled styles.
+
+- `Step 4: Label`
+  - Replaced `src/components/ui/label.tsx` with shadcn-style `forwardRef` primitive.
+  - Preserved visual treatment (`text-sm font-medium leading-none text-foreground-secondary`).
+  - Added standard peer-disabled styling.
+
+- `Step 5: Textarea`
+  - Replaced `src/components/ui/textarea.tsx` with shadcn-style `forwardRef` primitive.
+  - Preserved `min-h-24` and existing typography/padding behavior.
+  - Updated focus ring to semantic `ring-ring` + `ring-offset-background`.
+  - Preserved disabled styles.
+
+### Compatibility and Behavior Notes
+
+- Import paths remain unchanged (`@/components/ui/*`), so consumer files required no import rewrites for Phase 1.
+- Existing design system tokens remain intact; aliases are additive and non-breaking.
+- Existing `primary`/`accent` numeric color scales were preserved to avoid regressions in any future or dynamic class usage.
+
+### Validation Results
+
+- `npm run lint`: passed (existing pre-migration warning in `src/components/layout/user-menu.tsx` for `@next/next/no-img-element` remains unchanged).
+- `npm run build`: passed with successful type checking and production build output.
+
+---
+
+## Phase 2 Implementation Summary (Completed March 6, 2026)
+
+Phase 2 (`Step 6` to `Step 9`) has been implemented and validated.
+
+### Completed Scope
+
+- `Step 6: Dialog`
+  - Replaced `src/components/ui/dialog.tsx` custom focus-trap/escape/click-outside implementation with Radix Dialog primitives.
+  - Preserved controlled API compatibility (`open` + `onOpenChange`) through `Dialog` (`DialogPrimitive.Root`) and kept compound exports:
+    - `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`
+    - plus `DialogTrigger`, `DialogPortal`, `DialogClose`, `DialogOverlay`
+  - Preserved design/behavior contracts:
+    - Overlay feel: `bg-canvas/80` + `backdrop-blur-md`
+    - Animations: mobile `animate-slide-up`, desktop `animate-scale-in`, overlay `animate-fade-in`
+    - Content sizing/styling: `max-w-lg`, responsive max-height, `border-border`, `bg-surface`, `shadow-modal`
+
+- `Step 7: Popover`
+  - Replaced `src/components/ui/popover.tsx` custom portal/viewport-positioning implementation with Radix Popover primitives.
+  - Exported shadcn-style API:
+    - `Popover`, `PopoverTrigger`, `PopoverContent`, `PopoverAnchor`
+  - Preserved design tokens and motion:
+    - `rounded-lg`, `border-border`, `bg-elevated`, `shadow-floating`, `animate-fade-in`
+    - default `sideOffset={8}` preserved
+  - Updated `src/components/ui/date-picker.tsx` to Radix/shadcn Popover composition (`PopoverTrigger` + `PopoverContent`) while preserving DatePicker external API and locale/date formatting behavior.
+
+- `Step 8: Select`
+  - Replaced `src/components/ui/select.tsx` custom context/listbox implementation with Radix Select primitives.
+  - Preserved existing consumer contract (`Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem`) and added standard shadcn exports:
+    - `SelectGroup`, `SelectLabel`, `SelectSeparator`, `SelectScrollUpButton`, `SelectScrollDownButton`
+  - Preserved key styling/behavior:
+    - Trigger height `h-11`
+    - Input-like border/background treatment
+    - Elevated floating content panel
+    - Check-indicator selected state and keyboard navigation/focus handling via Radix
+
+- `Step 9: DropdownMenu`
+  - Replaced `src/components/ui/dropdown-menu.tsx` custom state-based implementation with Radix Dropdown Menu primitives.
+  - Exported shadcn-style API:
+    - `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem`, `DropdownMenuSeparator`
+    - plus `DropdownMenuGroup`, `DropdownMenuPortal`, `DropdownMenuSub`, `DropdownMenuRadioGroup`
+  - Preserved visual treatment:
+    - `bg-elevated`, `border-border`, `shadow-floating`, rounded content, highlighted item background via `bg-subtle`
+  - Verified current codebase has no active consumers of `@/components/ui/dropdown-menu` yet (UserMenu uses its own panel implementation).
+
+### Dependency Updates
+
+- Added required Radix dependencies in `package.json` and `package-lock.json`:
+  - `@radix-ui/react-dialog`
+  - `@radix-ui/react-popover`
+  - `@radix-ui/react-select`
+  - `@radix-ui/react-dropdown-menu`
+
+### Compatibility and Behavior Notes
+
+- Import paths remain unchanged (`@/components/ui/*`) for all migrated primitives.
+- DatePicker behavior and props remain intact (`value`, `onChange`, `disabled`, `locale`, `placeholder`, `id`) after switching to compound Popover composition.
+- Overlay/popup positioning, escape handling, and focus management are now delegated to Radix across Dialog/Popover/Select/DropdownMenu.
+
+### Validation Results
+
+- `npm run lint`: passed (existing warning in `src/components/layout/user-menu.tsx` for `@next/next/no-img-element` remains unchanged).
+- `npm run build`: passed with successful type checking and production build output.
+
+---
+
+## Phase 3 Implementation Summary (Completed March 6, 2026)
+
+Phase 3 (`Step 10` + `Step 11`) has been implemented and validated.
+
+### Completed Scope
+
+- `Step 10: Calendar`
+  - Reworked `src/components/ui/calendar.tsx` into a shadcn-style DayPicker wrapper while preserving project tokens and behavior.
+  - Updated the component contract to allow standard class/component extension points (`classNames`, `components`) in addition to existing props.
+  - Applied semantic selected-day styling (`bg-primary text-primary-foreground`) so selected dates resolve to existing brand tokens through the alias bridge.
+  - Preserved today styling (`font-semibold text-brand-primary`).
+  - Preserved custom chevron navigation visuals by wiring DayPicker's `Chevron` component to project iconography.
+  - Kept `showOutsideDays` behavior (default enabled) and refined focus/disabled classes to align with migrated primitives (`ring-ring`, `ring-offset-background`, consistent disabled treatment).
+
+- `Step 11: DatePicker`
+  - Updated `src/components/ui/date-picker.tsx` styling pass to match the migrated Calendar composition without changing external API:
+    - API preserved: `value`, `onChange`, `disabled`, `locale`, `placeholder`, `id`.
+    - Trigger remains Button + PopoverTrigger composition.
+    - Popover content now uses calendar-native sizing (`w-auto p-0`) for tighter shadcn-style integration.
+    - Added `initialFocus` to Calendar for improved keyboard focus behavior on open.
+  - Kept locale behavior for English/Spanish day-picker + display formatting.
+  - Hardened date parsing in `toDate` with invalid-date guards (rejects malformed or out-of-range `YYYY-MM-DD` strings instead of coercing unexpected values).
+
+### Compatibility and Behavior Notes
+
+- Import paths remain unchanged (`@/components/ui/calendar`, `@/components/ui/date-picker`).
+- Existing DatePicker consumer behavior is preserved (current active consumer: `src/components/trips/trip-header.tsx`).
+- Phase 3 remained within scoped components only; no trip/layout feature refactors were introduced.
+
+### Validation Results
+
+- `npm run lint`: passed (existing warning in `src/components/layout/user-menu.tsx` for `@next/next/no-img-element` remains unchanged).
+- `npm run build`: passed with successful type checking and production build output.
+
+---
+
 ## Current State
 
 - **Framework**: Next.js 14 App Router, TypeScript, Tailwind CSS 3
 - **shadcn config**: `components.json` exists (New York style, RSC, CSS variables)
-- **Deps already installed**: `tailwind-merge`, `class-variance-authority`, `react-day-picker`, `lucide-react`
-- **Deps NOT installed**: `@radix-ui/*` (shadcn's foundation) — will be added per-component
+- **Deps already installed**: `tailwind-merge`, `class-variance-authority`, `react-day-picker`, `lucide-react`, `@radix-ui/react-dialog`, `@radix-ui/react-popover`, `@radix-ui/react-select`, `@radix-ui/react-dropdown-menu`
 - **Design tokens**: Custom CSS variables (`--bg-canvas`, `--fg-primary`, `--brand-primary`, etc.) that do NOT follow shadcn's expected naming (`--background`, `--foreground`, `--primary`, etc.)
-- **`cn` utility**: Simplified version at `src/lib/utils.ts` — uses `twMerge` only, missing `clsx`
+- **`cn` utility**: shadcn-standard implementation at `src/lib/utils.ts` using `clsx` + `twMerge`
+- **Migration progress**: Phase 1, Phase 2, and Phase 3 completed (`Step 0` to `Step 11`). Only explicitly out-of-scope components remain unchanged by design.
 
 ---
 
@@ -235,7 +408,7 @@ Which trip/layout components import which UI primitives — these files need imp
 | Popover | `date-picker` |
 | Calendar | `date-picker` |
 | DropdownMenu | Verify — may have zero consumers (UserMenu uses its own panel) |
-| DatePicker | `trip-header`, `destination-modal`, `departure-transport-modal`, `return-transport-modal` |
+| DatePicker | `trip-header` |
 | Spinner | `destination-list`, `destination-modal`, `import-trip-button` |
 
 ---

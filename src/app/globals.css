@@ -43,6 +43,28 @@
   --motion-slow: 260ms;
   --ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
   --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* shadcn semantic token aliases */
+  --background: var(--bg-canvas);
+  --foreground: var(--fg-primary);
+  --card: var(--bg-elevated);
+  --card-foreground: var(--fg-primary);
+  --popover: var(--bg-elevated);
+  --popover-foreground: var(--fg-primary);
+  --primary: var(--brand-primary);
+  --primary-foreground: #ffffff;
+  --secondary: var(--bg-subtle);
+  --secondary-foreground: var(--fg-primary);
+  --muted: var(--bg-subtle);
+  --muted-foreground: var(--fg-muted);
+  --accent: var(--bg-subtle);
+  --accent-foreground: var(--fg-primary);
+  --destructive: var(--danger);
+  --destructive-foreground: #ffffff;
+  --border: var(--border-default);
+  --input: var(--border-default);
+  --ring: var(--brand-primary);
+  --radius: var(--radius-md);
 }
 
 :root[data-theme='dark'] {
@@ -68,6 +90,28 @@
   --warning: #ffb95e;
   --danger: #ff8787;
   --info: #74c0fc;
+
+  /* shadcn semantic token aliases */
+  --background: var(--bg-canvas);
+  --foreground: var(--fg-primary);
+  --card: var(--bg-elevated);
+  --card-foreground: var(--fg-primary);
+  --popover: var(--bg-elevated);
+  --popover-foreground: var(--fg-primary);
+  --primary: var(--brand-primary);
+  --primary-foreground: #ffffff;
+  --secondary: var(--bg-subtle);
+  --secondary-foreground: var(--fg-primary);
+  --muted: var(--bg-subtle);
+  --muted-foreground: var(--fg-muted);
+  --accent: var(--bg-subtle);
+  --accent-foreground: var(--fg-primary);
+  --destructive: var(--danger);
+  --destructive-foreground: #ffffff;
+  --border: var(--border-default);
+  --input: var(--border-default);
+  --ring: var(--brand-primary);
+  --radius: var(--radius-md);
 }
 
 html,
