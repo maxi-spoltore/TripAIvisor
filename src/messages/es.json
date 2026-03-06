@@ -14,6 +14,10 @@
     "settings": "Configuración",
     "comingSoon": "Próximamente",
     "language": "Idioma",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro",
+    "themeSystem": "Sistema",
     "tagline": "Planifica tus viajes, a tu manera",
     "welcomeBack": "Bienvenido de nuevo",
     "continueWithGoogle": "Continuar con Google"

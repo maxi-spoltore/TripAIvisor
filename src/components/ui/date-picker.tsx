@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/utils/dates';
 
 type DatePickerProps = {
@@ -56,7 +57,7 @@ export function DatePicker({ value, onChange, disabled = false, locale, placehol
   return (
     <Popover
       align="start"
-      className="w-[340px] max-w-[90vw]"
+      className="w-[min(22rem,calc(100vw-2rem))] p-1"
       disabled={disabled}
       onOpenChange={setOpen}
       open={open}
@@ -64,15 +65,18 @@ export function DatePicker({ value, onChange, disabled = false, locale, placehol
         <Button
           aria-expanded={open}
           aria-haspopup="dialog"
-          className="min-w-[150px] justify-start gap-2 text-sm font-normal"
+          className={cn(
+            'h-11 max-w-full min-w-0 justify-start gap-2 rounded-md px-3 text-left text-body-sm font-medium',
+            !displayValue && 'text-foreground-muted'
+          )}
           disabled={disabled}
           id={id}
           size="sm"
           type="button"
           variant="outline"
         >
-          <CalendarIcon className="h-4 w-4 text-slate-500" />
-          {displayValue ? <span>{displayValue}</span> : <span className="text-slate-400">{placeholder ?? ''}</span>}
+          <CalendarIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-brand-route" />
+          <span className="min-w-0 flex-1 truncate">{displayValue ?? placeholder ?? ''}</span>
         </Button>
       }
     >

@@ -10,6 +10,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        canvas: 'var(--bg-canvas)',
+        surface: 'var(--bg-surface)',
+        elevated: 'var(--bg-elevated)',
+        subtle: 'var(--bg-subtle)',
+        foreground: {
+          primary: 'var(--fg-primary)',
+          secondary: 'var(--fg-secondary)',
+          muted: 'var(--fg-muted)'
+        },
+        border: {
+          DEFAULT: 'var(--border-default)',
+          strong: 'var(--border-strong)'
+        },
+        brand: {
+          primary: 'var(--brand-primary)',
+          'primary-hover': 'var(--brand-primary-hover)',
+          accent: 'var(--brand-accent)',
+          'accent-soft': 'var(--brand-accent-soft)',
+          route: 'var(--brand-route)'
+        },
+        route: 'var(--brand-route)',
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        danger: 'var(--danger)',
+        info: 'var(--info)',
         primary: {
           50: '#f0fdfa',
           100: '#ccfbf1',
@@ -33,7 +58,32 @@ const config: Config = {
         }
       },
       fontFamily: {
-        sans: ['var(--font-inter)', ...defaultTheme.fontFamily.sans]
+        sans: ['var(--font-manrope)', ...defaultTheme.fontFamily.sans],
+        display: ['var(--font-space-grotesk)', 'var(--font-manrope)', ...defaultTheme.fontFamily.sans]
+      },
+      borderRadius: {
+        sm: 'var(--radius-sm)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+        pill: 'var(--radius-pill)'
+      },
+      boxShadow: {
+        'shadow-1': 'var(--shadow-1)',
+        'shadow-2': 'var(--shadow-2)',
+        'shadow-3': 'var(--shadow-3)',
+        card: 'var(--shadow-1)',
+        floating: 'var(--shadow-2)',
+        modal: 'var(--shadow-3)'
+      },
+      transitionDuration: {
+        fast: 'var(--motion-fast)',
+        base: 'var(--motion-base)',
+        slow: 'var(--motion-slow)'
+      },
+      transitionTimingFunction: {
+        standard: 'var(--ease-standard)',
+        emphasized: 'var(--ease-emphasized)'
       }
     }
   },

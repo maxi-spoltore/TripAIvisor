@@ -43,18 +43,18 @@ export function TripViewOnly({ locale, trip }: TripViewOnlyProps) {
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-8">
-      <div className="flex items-center gap-2 rounded-xl bg-primary-50 px-4 py-3 text-sm font-medium text-primary-700">
+      <div className="flex items-center gap-2 rounded-xl bg-subtle px-4 py-3 text-sm font-medium text-brand-primary">
         <Eye className="h-4 w-4" />
         {readOnlyBanner}
       </div>
 
-      <header className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="h-1 bg-gradient-to-r from-primary-400 to-primary-600" />
+      <header className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
+        <div className="h-1 bg-gradient-to-r from-brand-primary to-brand-route" />
         <div className="p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary-600">{title}</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900">{trip.title}</h1>
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-primary">{title}</p>
+          <h1 className="mt-2 text-3xl font-bold text-foreground-primary">{trip.title}</h1>
           {dateRange ? (
-            <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-700">
+            <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-subtle px-3 py-1 text-sm font-medium text-brand-primary">
               <Calendar className="h-3.5 w-3.5" />
               {dateRange}
             </span>
@@ -63,10 +63,10 @@ export function TripViewOnly({ locale, trip }: TripViewOnlyProps) {
       </header>
 
       {trip.destinations.length === 0 ? (
-        <p className="text-sm text-slate-600">{emptyState}</p>
+        <p className="text-sm text-foreground-secondary">{emptyState}</p>
       ) : (
         <div className="relative space-y-0">
-          <div className="absolute bottom-6 left-5 top-6 w-0.5 bg-slate-200" />
+          <div className="absolute bottom-6 left-5 top-6 w-0.5 bg-border" />
           {trip.destinations.map((destination, index) => {
             const dates = getDestinationDates(trip.start_date, trip.destinations, index);
             const destinationRange =
@@ -74,21 +74,21 @@ export function TripViewOnly({ locale, trip }: TripViewOnlyProps) {
 
             return (
               <div key={destination.destination_id} className="relative flex gap-4 pb-4">
-                <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-primary-300 bg-white text-sm font-bold text-primary-700">
+                <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-brand-primary bg-surface text-sm font-bold text-brand-primary">
                   {index + 1}
                 </div>
 
-                <div className="flex-1 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex-1 rounded-xl border border-border bg-surface p-5 shadow-card">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="text-lg font-bold text-slate-900">{destination.city}</h3>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                    <h3 className="text-lg font-bold text-foreground-primary">{destination.city}</h3>
+                    <span className="rounded-full bg-subtle px-2.5 py-0.5 text-xs font-medium text-foreground-secondary">
                       {renderDurationLabel(locale, destination.duration)}
                     </span>
                   </div>
-                  {destinationRange ? <p className="mt-1 text-sm text-slate-500">{destinationRange}</p> : null}
-                  {destination.notes ? <p className="mt-3 text-sm text-slate-700">{destination.notes}</p> : null}
+                  {destinationRange ? <p className="mt-1 text-sm text-foreground-muted">{destinationRange}</p> : null}
+                  {destination.notes ? <p className="mt-3 text-sm text-foreground-secondary">{destination.notes}</p> : null}
                   {destination.budget !== null ? (
-                    <p className="mt-2 text-sm text-slate-700">
+                    <p className="mt-2 text-sm text-foreground-secondary">
                       {locale === 'es' ? 'Presupuesto:' : 'Budget:'} ${destination.budget}
                     </p>
                   ) : null}

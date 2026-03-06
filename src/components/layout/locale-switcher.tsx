@@ -26,7 +26,7 @@ export function LocaleSwitcher() {
   const pathname = usePathname() || `/${locale}`;
 
   return (
-    <div className="flex rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-sm">
+    <div className="flex rounded-lg border border-border bg-subtle p-0.5 text-sm">
       {(['es', 'en'] as const).map((loc) => (
         <button
           key={loc}
@@ -34,8 +34,8 @@ export function LocaleSwitcher() {
           className={cn(
             'rounded-md px-3 py-1 font-medium transition-all duration-150',
             locale === loc
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-500 hover:text-slate-700'
+              ? 'bg-surface text-foreground-primary shadow-sm'
+              : 'text-foreground-muted hover:text-foreground-secondary'
           )}
           onClick={() => {
             if (loc !== locale) {

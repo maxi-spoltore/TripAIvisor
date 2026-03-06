@@ -50,21 +50,21 @@ export default async function LocaleDashboardPage({ params }: DashboardPageProps
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col items-center gap-8 p-8">
       <div className="text-center">
-        <h1 className="text-3xl font-semibold">{welcomeMessage}</h1>
-        <p className="mt-2 text-slate-500">{tAuth('tagline')}</p>
+        <h1 className="text-3xl font-semibold text-foreground-primary">{welcomeMessage}</h1>
+        <p className="mt-2 text-foreground-muted">{tAuth('tagline')}</p>
       </div>
 
       <div className="grid w-full max-w-md gap-4 sm:grid-cols-2">
         <Card>
           <CardContent className="flex flex-col items-center p-6">
-            <span className="text-3xl font-bold text-primary-600">{trips.length}</span>
-            <span className="text-sm text-slate-500">{tTrips('totalTrips', { count: trips.length })}</span>
+            <span className="text-3xl font-bold text-brand-primary">{trips.length}</span>
+            <span className="text-sm text-foreground-muted">{tTrips('totalTrips', { count: trips.length })}</span>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex flex-col items-center p-6">
-            <span className="text-3xl font-bold text-primary-600">{totalDestinations}</span>
-            <span className="text-sm text-slate-500">
+            <span className="text-3xl font-bold text-brand-primary">{totalDestinations}</span>
+            <span className="text-sm text-foreground-muted">
               {tTrips('totalDestinations', { count: totalDestinations })}
             </span>
           </CardContent>
@@ -72,7 +72,7 @@ export default async function LocaleDashboardPage({ params }: DashboardPageProps
       </div>
 
       <Link
-        className="inline-flex h-11 items-center justify-center rounded-lg bg-primary-600 px-6 text-sm font-medium text-white transition-colors hover:bg-primary-700"
+        className="inline-flex h-11 items-center justify-center rounded-lg bg-brand-primary px-6 text-sm font-medium text-white transition-colors hover:bg-brand-primary-hover"
         href={`/${locale}/trips`}
       >
         {tTrips('goToTrips')}

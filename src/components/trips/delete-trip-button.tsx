@@ -34,7 +34,7 @@ export function DeleteTripButton() {
       <button
         onClick={handleClick}
         type="button"
-        className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+        className="rounded-lg p-2 text-foreground-muted transition-colors hover:bg-subtle hover:text-danger"
         aria-label={tCommon('delete')}
       >
         <Trash2 className="h-4 w-4" />

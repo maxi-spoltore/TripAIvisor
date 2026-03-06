@@ -287,23 +287,23 @@ export function DestinationList({
     editingDestinationId === null ? null : items.find((item) => item.destination_id === editingDestinationId) ?? null;
 
   const addDestinationForm = (showTimelineNode: boolean, atPosition?: number) => (
-    <form className="relative flex gap-4" onSubmit={(event) => handleAddDestination(event, atPosition)}>
+    <form className="relative flex gap-3 sm:gap-4" onSubmit={(event) => handleAddDestination(event, atPosition)}>
       {showTimelineNode ? (
-        <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-dashed border-slate-300 bg-white text-slate-400">
+        <div className="relative z-10 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border-strong bg-canvas text-foreground-muted sm:h-10 sm:w-10">
           <Plus className="h-4 w-4" />
         </div>
       ) : null}
 
       <div
         className={cn(
-          'flex flex-1 gap-3 rounded-xl border border-dashed border-slate-300 bg-white p-4 transition-colors focus-within:border-primary-400 focus-within:bg-primary-50/30',
+          'flex flex-1 flex-col gap-3 rounded-xl border border-dashed border-border-strong bg-elevated p-3 transition-colors duration-base ease-standard focus-within:border-brand-primary sm:p-4',
           showTimelineNode ? '' : 'ml-0'
         )}
       >
         <div className="flex items-center gap-2">
           <input
             checked={isStopover}
-            className="h-4 w-4 rounded border-slate-300 text-primary-600"
+            className="h-4 w-4 rounded border-border text-brand-primary"
             disabled={isPending}
             id={atPosition !== undefined ? `stopover-${atPosition}` : 'stopover-bottom'}
             onChange={(event) => {
@@ -317,80 +317,90 @@ export function DestinationList({
             type="checkbox"
           />
           <label
-            className="text-xs font-medium text-slate-500"
+            className="text-label-md text-foreground-secondary"
             htmlFor={atPosition !== undefined ? `stopover-${atPosition}` : 'stopover-bottom'}
           >
             {tDestinations('stopover')}
           </label>
         </div>
-        <div className="flex flex-[2] flex-col gap-1">
-          <label className="text-xs font-medium text-slate-500">{tDestinations('city')}</label>
-          <Input
-            disabled={isPending}
-            onChange={(event) => setNewCity(event.target.value)}
-            placeholder={locale === 'es' ? 'Nueva Ciudad' : 'New City'}
-            value={newCity}
-          />
-        </div>
-        {!isStopover ? (
-          <div className="flex flex-1 flex-col gap-1">
-            <label className="text-xs font-medium text-slate-500">{tDestinations('duration')}</label>
+
+        <div className={cn('grid gap-3', !isStopover && 'sm:grid-cols-2')}>
+          <div className="space-y-1">
+            <label className="text-label-md text-foreground-secondary">{tDestinations('city')}</label>
             <Input
               disabled={isPending}
-              min={1}
-              onChange={(event) => setNewDuration(event.target.value)}
-              placeholder={locale === 'es' ? 'Días' : 'Days'}
-              type="number"
-              value={newDuration}
+              onChange={(event) => setNewCity(event.target.value)}
+              placeholder={locale === 'es' ? 'Nueva Ciudad' : 'New City'}
+              value={newCity}
             />
           </div>
-        ) : null}
-        <Button className="self-end" disabled={isPending} type="submit">
-          {isPending ? (
-            <>
-              <Spinner className="mr-2" />
-              {locale === 'es' ? 'Agregando...' : 'Adding...'}
-            </>
-          ) : (
-            locale === 'es' ? 'Agregar' : 'Add'
-          )}
-        </Button>
-        {typeof atPosition === 'number' ? (
-          <Button
-            className="self-end"
-            disabled={isPending}
-            onClick={() => {
-              setInsertAtPosition(null);
-              setIsStopover(false);
-              setNewDuration('2');
-            }}
-            type="button"
-            variant="outline"
-          >
-            {tCommon('cancel')}
+
+          {!isStopover ? (
+            <div className="space-y-1">
+              <label className="text-label-md text-foreground-secondary">{tDestinations('duration')}</label>
+              <Input
+                disabled={isPending}
+                min={1}
+                onChange={(event) => setNewDuration(event.target.value)}
+                placeholder={locale === 'es' ? 'Días' : 'Days'}
+                type="number"
+                value={newDuration}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button className="sm:w-auto" disabled={isPending} type="submit">
+            {isPending ? (
+              <>
+                <Spinner className="mr-2" />
+                {locale === 'es' ? 'Agregando...' : 'Adding...'}
+              </>
+            ) : (
+              locale === 'es' ? 'Agregar' : 'Add'
+            )}
           </Button>
-        ) : null}
+          {typeof atPosition === 'number' ? (
+            <Button
+              className="sm:w-auto"
+              disabled={isPending}
+              onClick={() => {
+                setInsertAtPosition(null);
+                setIsStopover(false);
+                setNewDuration('2');
+              }}
+              type="button"
+              variant="outline"
+            >
+              {tCommon('cancel')}
+            </Button>
+          ) : null}
+        </div>
       </div>
     </form>
   );
 
   return (
     <section className="space-y-4">
-      {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
+      {errorMessage ? (
+        <p className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-body-sm text-danger">{errorMessage}</p>
+      ) : null}
 
       {items.length === 0 ? (
         <>
-          <p className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
+          <p className="rounded-lg border border-dashed border-border-strong bg-surface p-4 text-body-sm text-foreground-secondary">
             {locale === 'es' ? 'No hay destinos todavía.' : 'No destinations yet.'}
           </p>
           {addDestinationForm(false)}
         </>
       ) : (
-        <div className="relative space-y-0">
-          <div className="absolute left-5 top-6 bottom-6 w-0.5 bg-slate-200" />
+        <div className="relative">
+          <div className="absolute bottom-6 left-[1.05rem] top-6 w-px bg-border sm:left-5" />
+
           {departureCity ? (
-            <div className="relative flex gap-4 pb-4">
-              <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-700 text-white">
+            <div className="relative flex gap-3 pb-4 sm:gap-4">
+              <div className="relative z-10 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-primary text-white sm:h-10 sm:w-10">
                 <PlaneTakeoff className="h-4 w-4" />
               </div>
               <div className="flex-1">
@@ -405,14 +415,15 @@ export function DestinationList({
               </div>
             </div>
           ) : null}
+
           {items.map((destination, index) => (
             <Fragment key={destination.destination_id}>
               {insertAtPosition === index ? (
                 <div className="pb-4">{addDestinationForm(true, index)}</div>
               ) : (
-                <div className="group/insert relative flex h-6 items-center">
+                <div className="group/insert relative flex h-7 items-center">
                   <button
-                    className="relative z-10 ml-2.5 flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-slate-300 bg-white text-slate-400 opacity-0 transition-all duration-150 group-hover/insert:opacity-100 hover:border-primary-400 hover:text-primary-500 focus-visible:opacity-100"
+                    className="relative z-10 ml-[0.65rem] flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-border-strong bg-canvas text-foreground-muted opacity-0 transition-all duration-fast ease-standard group-hover/insert:opacity-100 hover:border-brand-primary hover:text-brand-primary focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas sm:ml-2"
                     disabled={isPending}
                     onClick={() => {
                       setInsertAtPosition(index);
@@ -424,24 +435,25 @@ export function DestinationList({
                   >
                     <Plus className="h-3 w-3" />
                   </button>
-                  <span className="pointer-events-none absolute left-10 top-1/2 z-20 -translate-y-1/2 rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white opacity-0 transition-opacity duration-150 group-hover/insert:opacity-100 group-focus-within/insert:opacity-100">
+                  <span className="pointer-events-none absolute left-10 top-1/2 z-20 -translate-y-1/2 rounded-md bg-foreground-primary px-2 py-1 text-label-sm text-canvas opacity-0 transition-opacity duration-fast ease-standard group-hover/insert:opacity-100 group-focus-within/insert:opacity-100">
                     {tDestinations('insertHere')}
                   </span>
                 </div>
               )}
+
               <div
+                className={cn('relative flex gap-3 pb-4 sm:gap-4', draggedIndex === index ? 'opacity-60' : null)}
                 draggable={!isPending}
                 onDragOver={handleDragOver}
                 onDragStart={(event) => handleDragStart(event, index)}
                 onDrop={(event) => handleDrop(event, index)}
-                className={cn('relative flex gap-4 pb-4', draggedIndex === index ? 'opacity-60' : null)}
               >
                 {destination.is_stopover ? (
-                  <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-dashed border-amber-300 bg-amber-50 text-amber-600">
+                  <div className="relative z-10 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border-strong bg-elevated text-foreground-secondary sm:h-10 sm:w-10">
                     <ArrowRightLeft className="h-4 w-4" />
                   </div>
                 ) : (
-                  <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-primary-300 bg-white text-sm font-bold text-primary-700">
+                  <div className="relative z-10 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border-2 border-route/45 bg-canvas text-body-sm font-semibold text-brand-primary sm:h-10 sm:w-10">
                     {index + 1}
                   </div>
                 )}
@@ -464,9 +476,10 @@ export function DestinationList({
               </div>
             </Fragment>
           ))}
+
           {returnCity ? (
-            <div className="relative flex gap-4 pb-4">
-              <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-700 text-white">
+            <div className="relative flex gap-3 pb-4 sm:gap-4">
+              <div className="relative z-10 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-primary text-white sm:h-10 sm:w-10">
                 <PlaneLanding className="h-4 w-4" />
               </div>
               <div className="flex-1">
@@ -481,6 +494,7 @@ export function DestinationList({
               </div>
             </div>
           ) : null}
+
           {insertAtPosition === null ? addDestinationForm(true) : null}
         </div>
       )}
@@ -508,10 +522,10 @@ export function DestinationList({
             <DialogDescription>{tDestinations('confirmDeleteDestination')}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPendingDeleteId(null)}>
+            <Button onClick={() => setPendingDeleteId(null)} variant="outline">
               {tCommon('cancel')}
             </Button>
-            <Button variant="destructive" onClick={handleConfirmDeleteDestination}>
+            <Button onClick={handleConfirmDeleteDestination} variant="destructive">
               {tCommon('delete')}
             </Button>
           </DialogFooter>

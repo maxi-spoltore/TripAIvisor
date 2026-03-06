@@ -158,12 +158,16 @@ export function TripHeader({ locale, tripId, title, startDate, endDate, totalDay
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="h-1 bg-gradient-to-r from-primary-400 to-primary-600" />
-      <div className="p-6">
-        <div className="group relative">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
+      <div className="h-1.5 bg-gradient-to-r from-brand-route via-brand-primary to-brand-accent" />
+
+      <div className="space-y-5 p-4 sm:space-y-6 sm:p-6">
+        <div className="group relative space-y-2">
+          <p className="text-label-sm uppercase tracking-[0.03em] text-foreground-muted">
+            {locale === 'es' ? 'Resumen del viaje' : 'Trip summary'}
+          </p>
           <Input
-            className="h-auto border-transparent px-0 text-3xl font-bold leading-tight shadow-none focus-visible:ring-0 focus-visible:border-primary-300"
+            className="h-auto border-transparent bg-transparent px-0 py-0 font-display text-display-md font-bold leading-tight text-foreground-primary shadow-none focus-visible:border-transparent focus-visible:ring-0"
             disabled={isPending}
             onBlur={saveTitle}
             onChange={(event) => setEditingTitle(event.target.value)}
@@ -175,56 +179,59 @@ export function TripHeader({ locale, tripId, title, startDate, endDate, totalDay
             placeholder={tTrips('defaultTitle')}
             value={editingTitle}
           />
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-200 opacity-0 transition-opacity group-hover:opacity-100" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-brand-primary/30 opacity-0 transition-opacity duration-fast ease-standard group-hover:opacity-100" />
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-slate-500" htmlFor="trip-start-date">
-              {tTrips('startDateLabel')}
-            </label>
-            <DatePicker
-              disabled={isPending}
-              id="trip-start-date"
-              locale={locale}
-              onChange={handleStartDateChange}
-              placeholder={tTrips('startDateLabel')}
-              value={localStartDate}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-slate-500" htmlFor="trip-end-date">
-              {tTrips('endDateLabel')}
-            </label>
-            <DatePicker
-              disabled={isPending}
-              id="trip-end-date"
-              locale={locale}
-              onChange={handleEndDateChange}
-              placeholder={tTrips('endDateLabel')}
-              value={localEndDate}
-            />
+        <div className="space-y-3 rounded-lg border border-border bg-elevated p-3 sm:p-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-3 space-x-2">
+              <label className="text-label-md text-foreground-muted" htmlFor="trip-start-date">
+                {tTrips('startDateLabel')}
+              </label>
+              <DatePicker
+                disabled={isPending}
+                id="trip-start-date"
+                locale={locale}
+                onChange={handleStartDateChange}
+                placeholder={tTrips('startDateLabel')}
+                value={localStartDate}
+              />
+            </div>
+
+            <div className="space-y-3 space-x-2">
+              <label className="text-label-md text-foreground-muted" htmlFor="trip-end-date">
+                {tTrips('endDateLabel')}
+              </label>
+              <DatePicker
+                disabled={isPending}
+                id="trip-end-date"
+                locale={locale}
+                onChange={handleEndDateChange}
+                placeholder={tTrips('endDateLabel')}
+                value={localEndDate}
+              />
+            </div>
           </div>
 
           {totalDays > 0 ? (
-            <span className="rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-700">
+            <span className="inline-flex w-fit rounded-pill bg-brand-accent-soft px-3 py-1 text-label-md font-semibold text-brand-primary">
               {tTrips('days', { count: totalDays })}
             </span>
           ) : null}
 
-          <div className="ml-auto flex gap-2">
-            <Button onClick={handleExportTrip} type="button" variant="outline" size="sm">
-              <Download className="mr-2 h-4 w-4" />
-              {tTrips('export')}
-            </Button>
-            <Button onClick={() => setIsShareModalOpen(true)} type="button" variant="outline" size="sm">
-              <Share2 className="mr-2 h-4 w-4" />
-              {tShare('open')}
-            </Button>
-          </div>
+          {dateError ? <p className="text-body-sm text-danger">{dateError}</p> : null}
         </div>
 
-        {dateError ? <p className="mt-2 text-sm text-red-600">{dateError}</p> : null}
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Button className="w-full sm:w-auto" onClick={handleExportTrip} size="sm" type="button" variant="outline">
+            <Download aria-hidden="true" className="mr-2 h-4 w-4" />
+            {tTrips('export')}
+          </Button>
+          <Button className="w-full sm:w-auto" onClick={() => setIsShareModalOpen(true)} size="sm" type="button" variant="outline">
+            <Share2 aria-hidden="true" className="mr-2 h-4 w-4" />
+            {tShare('open')}
+          </Button>
+        </div>
       </div>
 
       <ShareModal locale={locale} onClose={() => setIsShareModalOpen(false)} open={isShareModalOpen} tripId={tripId} />

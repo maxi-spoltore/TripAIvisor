@@ -3,36 +3,273 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
+
+  --bg-canvas: #f6f7f5;
+  --bg-surface: #ffffff;
+  --bg-elevated: #fcfcfb;
+  --bg-subtle: #eef1ee;
+
+  --fg-primary: #0d1b2a;
+  --fg-secondary: #3e4c59;
+  --fg-muted: #6b7a88;
+
+  --border-default: #d7dee4;
+  --border-strong: #bfcad4;
+
+  --brand-primary: #0a4d68;
+  --brand-primary-hover: #083f56;
+  --brand-accent: #ff6b4a;
+  --brand-accent-soft: #ffe3db;
+  --brand-route: #2cb1a5;
+
+  --success: #2f9e44;
+  --warning: #e67700;
+  --danger: #d94848;
+  --info: #1971c2;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  --shadow-1: 0 1px 2px rgb(13 27 42 / 0.06), 0 4px 10px rgb(13 27 42 / 0.04);
+  --shadow-2: 0 8px 24px rgb(13 27 42 / 0.12), 0 2px 8px rgb(13 27 42 / 0.08);
+  --shadow-3: 0 20px 48px rgb(13 27 42 / 0.2), 0 6px 16px rgb(13 27 42 / 0.12);
+
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 260ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:root[data-theme='dark'] {
+  --bg-canvas: #0e141b;
+  --bg-surface: #121b24;
+  --bg-elevated: #17222d;
+  --bg-subtle: #1e2b37;
+
+  --fg-primary: #e9f0f6;
+  --fg-secondary: #c1ced9;
+  --fg-muted: #98a9b9;
+
+  --border-default: #2d3c4a;
+  --border-strong: #3a4e60;
+
+  --brand-primary: #48a7d4;
+  --brand-primary-hover: #6fc0e7;
+  --brand-accent: #ff8d72;
+  --brand-accent-soft: #3b2420;
+  --brand-route: #49cfc0;
+
+  --success: #63d482;
+  --warning: #ffb95e;
+  --danger: #ff8787;
+  --info: #74c0fc;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
-  @apply bg-gray-50 font-sans text-slate-900 antialiased;
+  background:
+    radial-gradient(circle at 10% -10%, color-mix(in srgb, var(--brand-route) 8%, transparent), transparent 46%),
+    radial-gradient(circle at 95% -8%, color-mix(in srgb, var(--brand-accent) 10%, transparent), transparent 50%),
+    var(--bg-canvas);
+  color: var(--fg-primary);
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--fg-primary);
+  font-family: var(--font-space-grotesk), var(--font-manrope), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand-primary) 24%, transparent);
+  color: var(--fg-primary);
 }
 
 @layer utilities {
   .animate-fade-in {
-    animation: fadeIn 200ms ease-out;
+    animation: fadeIn var(--motion-base) var(--ease-standard);
   }
+
   .animate-slide-up {
-    animation: slideUp 200ms ease-out;
+    animation: slideUp var(--motion-base) var(--ease-emphasized);
   }
+
   .animate-scale-in {
-    animation: scaleIn 200ms ease-out;
+    animation: scaleIn var(--motion-base) var(--ease-emphasized);
+  }
+
+  .text-display-lg {
+    font-family: var(--font-space-grotesk), var(--font-manrope), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 2.125rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 2.5rem;
+  }
+
+  .text-display-md {
+    font-family: var(--font-space-grotesk), var(--font-manrope), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 2.125rem;
+  }
+
+  .text-title-lg {
+    font-size: 1.375rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    line-height: 1.75rem;
+  }
+
+  .text-title-md {
+    font-size: 1.125rem;
+    font-weight: 650;
+    line-height: 1.5rem;
+  }
+
+  .text-body-lg {
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5rem;
+  }
+
+  .text-body-md {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.375rem;
+  }
+
+  .text-body-sm {
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+  }
+
+  .text-label-md {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.125rem;
+  }
+
+  .text-label-sm {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1rem;
   }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes viewTransitionFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes viewTransitionFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@supports (view-transition-name: none) {
+  .vt-route-shell {
+    contain: layout paint;
+  }
+
+  ::view-transition-group(*) {
+    animation-duration: var(--motion-slow);
+    animation-timing-function: var(--ease-standard);
+  }
+
+  ::view-transition-old(root) {
+    animation-name: viewTransitionFadeOut;
+  }
+
+  ::view-transition-new(root) {
+    animation-name: viewTransitionFadeIn;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  @supports (view-transition-name: none) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation-duration: 0.01ms !important;
+      animation-name: none !important;
+    }
+  }
 }

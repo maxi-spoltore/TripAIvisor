@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,9 @@ type PopoverProps = {
   disabled?: boolean;
 };
 
+const VIEWPORT_GUTTER = 16;
+const POPOVER_OFFSET = 8;
+
 export function Popover({
   open,
   onOpenChange,
@@ -26,11 +29,58 @@ export function Popover({
   const triggerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [position, setPosition] = useState<CSSProperties>({
+    left: 0,
+    maxHeight: 0,
+    maxWidth: 0,
+    minWidth: 0,
+    top: 0
+  });
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const updatePosition = useCallback(() => {
+    const triggerRect = triggerRef.current?.getBoundingClientRect();
+    if (!triggerRect) {
+      return;
+    }
+
+    const contentRect = contentRef.current?.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    const maxWidth = Math.max(0, viewportWidth - VIEWPORT_GUTTER * 2);
+    const estimatedWidth = Math.min(contentRect?.width ?? triggerRect.width, maxWidth);
+    const estimatedHeight = contentRect?.height ?? 320;
+
+    const defaultLeft = align === 'end' ? triggerRect.right - estimatedWidth : triggerRect.left;
+    const clampedLeft = Math.min(
+      Math.max(defaultLeft, VIEWPORT_GUTTER),
+      Math.max(VIEWPORT_GUTTER, viewportWidth - estimatedWidth - VIEWPORT_GUTTER)
+    );
+
+    const spaceBelow = viewportHeight - triggerRect.bottom - POPOVER_OFFSET - VIEWPORT_GUTTER;
+    const spaceAbove = triggerRect.top - POPOVER_OFFSET - VIEWPORT_GUTTER;
+    const shouldShowAbove = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    const top = shouldShowAbove
+      ? Math.max(VIEWPORT_GUTTER, triggerRect.top - POPOVER_OFFSET - estimatedHeight)
+      : triggerRect.bottom + POPOVER_OFFSET;
+    const maxHeight = Math.max(
+      120,
+      shouldShowAbove ? triggerRect.top - POPOVER_OFFSET - VIEWPORT_GUTTER : spaceBelow
+    );
+
+    setPosition({
+      left: clampedLeft,
+      maxHeight,
+      maxWidth,
+      minWidth: Math.min(triggerRect.width, maxWidth),
+      top,
+      transformOrigin: shouldShowAbove ? 'bottom' : 'top'
+    });
+  }, [align]);
 
   useEffect(() => {
     if (!open) {
@@ -66,41 +116,27 @@ export function Popover({
       return;
     }
 
-    const updatePosition = () => {
-      const triggerRect = triggerRef.current?.getBoundingClientRect();
-      if (!triggerRect) {
-        return;
-      }
-
-      setPosition({
-        top: triggerRect.bottom + 8,
-        left: align === 'end' ? triggerRect.right : triggerRect.left
-      });
-    };
-
     updatePosition();
+    const animationFrameId = window.requestAnimationFrame(updatePosition);
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition, true);
     return () => {
+      window.cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [align, open]);
+  }, [open, updatePosition]);
 
   const content =
     open && mounted
       ? createPortal(
           <div
             className={cn(
-              'fixed z-[70] rounded-xl border border-slate-200 bg-white shadow-lg animate-fade-in',
+              'fixed z-[70] overflow-y-auto rounded-lg border border-border bg-elevated shadow-floating animate-fade-in',
               className
             )}
             ref={contentRef}
-            style={{
-              top: position.top,
-              left: position.left,
-              transform: align === 'end' ? 'translateX(-100%)' : undefined
-            }}
+            style={position}
           >
             {children}
           </div>,
@@ -109,7 +145,7 @@ export function Popover({
       : null;
 
   return (
-    <div ref={triggerRef} className="relative inline-block">
+    <div ref={triggerRef} className="inline-flex max-w-full">
       <div
         onClick={() => {
           if (!disabled) {

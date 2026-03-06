@@ -243,17 +243,17 @@ export function ReturnCard({
 
   return (
     <>
-      <div className="rounded-xl border border-primary-200 bg-gradient-to-r from-primary-50/60 to-white shadow-sm">
+      <div className="rounded-xl border border-border bg-gradient-to-r from-subtle to-surface shadow-sm">
         <div className="p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-slate-900">
+              <h3 className="text-lg font-bold text-foreground-primary">
                 {tTrips('endOfTrip')} - {returnCity}
               </h3>
               {formattedReturnDate ? (
-                <p className="mt-2 text-sm text-slate-600">{formattedReturnDate}</p>
+                <p className="mt-2 text-sm text-foreground-secondary">{formattedReturnDate}</p>
               ) : (
-                <p className="mt-2 text-sm text-slate-500">{locale === 'es' ? 'Sin fecha definida' : 'No date set'}</p>
+                <p className="mt-2 text-sm text-foreground-muted">{locale === 'es' ? 'Sin fecha definida' : 'No date set'}</p>
               )}
             </div>
 
@@ -264,11 +264,11 @@ export function ReturnCard({
           </div>
 
           {hasTransport ? (
-            <div className="mt-4 rounded-lg bg-white/80 p-3">
+            <div className="mt-4 rounded-lg bg-elevated p-3">
               {hasLegsItinerary ? (
                 <>
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="flex items-center gap-2 text-sm font-semibold text-primary-700">
+                    <h4 className="flex items-center gap-2 text-sm font-semibold text-brand-primary">
                       <Plane className="h-4 w-4" />
                       {tTransport('flightItinerary')} · {sortedLegs.length}
                     </h4>
@@ -293,7 +293,7 @@ export function ReturnCard({
                   </div>
 
                   {!isLegsCollapsed || sortedLegs.length < 3 ? (
-                    <div className="mt-3 space-y-3 text-sm text-slate-700">
+                    <div className="mt-3 space-y-3 text-sm text-foreground-secondary">
                       {sortedLegs.map((leg, index) => {
                         const nextLeg = sortedLegs[index + 1] ?? null;
                         const reservation = [leg.booking_number, leg.booking_code].filter(Boolean).join('/');
@@ -331,18 +331,18 @@ export function ReturnCard({
 
                         return (
                           <div key={`return-leg-${leg.leg_id}`}>
-                            <p className="font-medium text-slate-900">{tTransport('legN', { n: index + 1 })}</p>
+                            <p className="font-medium text-foreground-primary">{tTransport('legN', { n: index + 1 })}</p>
                             <p>
                               {(leg.origin_city ?? '-') + ' -> ' + (leg.destination_city ?? '-')}
                             </p>
-                            {detailLine ? <p className="text-slate-600">{detailLine}</p> : null}
-                            {timeLine ? <p className="text-slate-600">{timeLine}</p> : null}
+                            {detailLine ? <p className="text-foreground-secondary">{detailLine}</p> : null}
+                            {timeLine ? <p className="text-foreground-secondary">{timeLine}</p> : null}
 
                             {layoverMinutes !== null ? (
                               <p
                                 className={cn(
-                                  'my-2 text-center text-xs font-medium text-slate-500',
-                                  layoverMinutes < 60 ? 'text-amber-600' : null
+                                  'my-2 text-center text-xs font-medium text-foreground-muted',
+                                  layoverMinutes < 60 ? 'text-warning' : null
                                 )}
                               >
                                 -- {tTransport('connection', { duration: formatDuration(layoverMinutes) })} --
@@ -355,29 +355,29 @@ export function ReturnCard({
                   ) : null}
 
                   {typeof totalJourneyMinutes === 'number' && totalJourneyMinutes >= 0 ? (
-                    <p className="mt-3 text-sm font-medium text-slate-700">
+                    <p className="mt-3 text-sm font-medium text-foreground-secondary">
                       {tTransport('totalJourney', { duration: formatDuration(totalJourneyMinutes) })}
                     </p>
                   ) : null}
                 </>
               ) : (
                 <>
-                  <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary-700">
+                  <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-brand-primary">
                     <TransportIcon className="h-4 w-4" />
                     {tTransport('title')}
                   </h4>
 
-                  <div className="space-y-1 text-sm text-slate-700">
+                  <div className="space-y-1 text-sm text-foreground-secondary">
                     {transportDetails.map((field) => (
                       <p key={`return-transport-${field.label}`}>
-                        <span className="text-slate-500">{field.label}:</span> {field.value}
+                        <span className="text-foreground-muted">{field.label}:</span> {field.value}
                       </p>
                     ))}
                   </div>
 
                   {travelDays > 0 ? (
                     <div className="mt-3">
-                      <span className="inline-flex rounded-full bg-primary-100 px-2.5 py-0.5 text-xs font-semibold text-primary-700">
+                      <span className="inline-flex rounded-full bg-subtle px-2.5 py-0.5 text-xs font-semibold text-brand-primary">
                         {tTrips('travelDaysBadge', { count: travelDays })}
                       </span>
                     </div>
@@ -389,7 +389,7 @@ export function ReturnCard({
         </div>
       </div>
 
-      {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
+      {errorMessage ? <p className="text-sm text-danger">{errorMessage}</p> : null}
 
       <ReturnTransportModal
         isPending={isPending}

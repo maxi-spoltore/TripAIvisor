@@ -236,24 +236,28 @@ export function DestinationCard({
   return (
     <div
       className={cn(
-        'rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md',
-        destination.is_stopover ? 'border-dashed border-slate-300 bg-slate-50' : 'border-slate-200 bg-white'
+        'rounded-xl border shadow-card transition-all duration-base ease-standard hover:shadow-floating',
+        destination.is_stopover ? 'border-border-strong bg-elevated' : 'border-border bg-surface'
       )}
     >
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-slate-900">{destination.city || fallbackName}</h3>
-              {hasTransport ? <TransportIcon aria-hidden="true" className="h-4 w-4 text-primary-500" /> : null}
-              {hasAccommodation ? <Hotel aria-hidden="true" className="h-4 w-4 text-amber-500" /> : null}
+      <div className="space-y-4 p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3 sm:gap-4">
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="truncate text-title-md font-semibold text-foreground-primary sm:text-title-lg">
+                {destination.city || fallbackName}
+              </h3>
+              {hasTransport ? <TransportIcon aria-hidden="true" className="h-4 w-4 text-route" /> : null}
+              {hasAccommodation ? <Hotel aria-hidden="true" className="h-4 w-4 text-brand-accent" /> : null}
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+            <div className="flex flex-wrap items-center gap-2 text-body-sm text-foreground-secondary">
               <span
                 className={cn(
-                  'rounded-full px-2.5 py-0.5 text-xs font-medium',
-                  destination.is_stopover ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+                  'inline-flex rounded-pill px-2.5 py-1 text-label-md font-semibold',
+                  destination.is_stopover
+                    ? 'bg-brand-accent-soft text-brand-primary'
+                    : 'bg-subtle text-foreground-secondary'
                 )}
               >
                 {destination.is_stopover
@@ -262,7 +266,12 @@ export function DestinationCard({
                     : 'Stopover'
                   : `${destination.duration} ${locale === 'es' ? 'días' : 'days'}`}
               </span>
-              {dateRange ? <span>{dateRange}</span> : null}
+
+              {dateRange ? (
+                <span className="inline-flex rounded-pill bg-subtle px-2.5 py-1 text-label-md text-foreground-secondary">
+                  {dateRange}
+                </span>
+              ) : null}
             </div>
           </div>
 
@@ -271,25 +280,25 @@ export function DestinationCard({
               aria-label={actionsLabel}
               aria-controls={openMenuId === cardId ? menuId : undefined}
               aria-expanded={openMenuId === cardId}
-              aria-haspopup="true"
-              className="rounded-lg p-2 transition-colors hover:bg-slate-100"
+              aria-haspopup="menu"
+              className="rounded-md p-2 text-foreground-muted transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
               onClick={(event) => {
                 event.stopPropagation();
                 setOpenMenuId(openMenuId === cardId ? null : cardId);
               }}
               type="button"
             >
-              <MoreVertical className="h-5 w-5 text-slate-600" />
+              <MoreVertical aria-hidden="true" className="h-4 w-4" />
             </button>
 
             {openMenuId === cardId ? (
               <div
-                className="absolute right-0 top-full z-10 mt-1 min-w-[150px] animate-fade-in rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+                className="absolute right-0 top-full z-10 mt-1 min-w-[10rem] animate-fade-in rounded-lg border border-border bg-elevated py-1 shadow-floating"
                 id={menuId}
                 role="menu"
               >
                 <button
-                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-slate-700 hover:bg-slate-50"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm font-medium text-foreground-secondary transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary"
                   onClick={(event) => {
                     event.stopPropagation();
                     setOpenMenuId(null);
@@ -298,11 +307,11 @@ export function DestinationCard({
                   role="menuitem"
                   type="button"
                 >
-                  <Edit2 className="h-4 w-4" />
+                  <Edit2 aria-hidden="true" className="h-4 w-4" />
                   {locale === 'es' ? 'Editar' : 'Edit'}
                 </button>
                 <button
-                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-red-600 hover:bg-red-50"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm font-medium text-danger transition-colors duration-fast ease-standard hover:bg-danger/10"
                   onClick={(event) => {
                     event.stopPropagation();
                     setOpenMenuId(null);
@@ -311,7 +320,7 @@ export function DestinationCard({
                   role="menuitem"
                   type="button"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 aria-hidden="true" className="h-4 w-4" />
                   {locale === 'es' ? 'Eliminar' : 'Delete'}
                 </button>
               </div>
@@ -320,21 +329,22 @@ export function DestinationCard({
         </div>
 
         {!expanded ? (
-          <div className="mt-3 space-y-3 text-sm text-slate-700">
+          <div className="space-y-2 text-body-sm text-foreground-secondary">
             {transportPreview.length > 0 ? (
-              <div className="space-y-1">
+              <div className="space-y-1 rounded-lg border border-border bg-elevated p-3">
                 {transportPreview.map((field) => (
                   <p key={`transport-${field.label}`}>
-                    <span className="text-slate-500">{field.label}:</span> {field.value}
+                    <span className="text-foreground-muted">{field.label}:</span> {field.value}
                   </p>
                 ))}
               </div>
             ) : null}
+
             {accommodationPreview.length > 0 && !destination.is_stopover ? (
-              <div className="space-y-1">
+              <div className="space-y-1 rounded-lg border border-border bg-elevated p-3">
                 {accommodationPreview.map((field) => (
                   <p key={`accommodation-${field.label}`}>
-                    <span className="text-slate-500">{field.label}:</span> {field.value}
+                    <span className="text-foreground-muted">{field.label}:</span> {field.value}
                   </p>
                 ))}
               </div>
@@ -344,7 +354,7 @@ export function DestinationCard({
 
         {hasMoreContent ? (
           <button
-            className="mt-3 flex items-center gap-1.5 text-sm font-medium text-primary-600 transition-colors hover:text-primary-700"
+            className="inline-flex items-center gap-1.5 rounded-md text-body-sm font-semibold text-brand-primary transition-colors duration-fast ease-standard hover:text-brand-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
             onClick={onToggle}
             type="button"
           >
@@ -355,22 +365,22 @@ export function DestinationCard({
               : locale === 'es'
                 ? 'Ver detalles'
                 : 'Show details'}
-            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {expanded ? <ChevronUp aria-hidden="true" className="h-4 w-4" /> : <ChevronDown aria-hidden="true" className="h-4 w-4" />}
           </button>
         ) : null}
 
         {expanded ? (
-          <div className="mt-4 space-y-3">
+          <div className="space-y-3">
             {transportDetails.length > 0 ? (
-              <div className="rounded-lg bg-primary-50/50 p-3">
-                <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary-700">
-                  <TransportIcon className="h-4 w-4" />
+              <div className="rounded-lg border border-border bg-elevated p-3">
+                <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-brand-primary">
+                  <TransportIcon aria-hidden="true" className="h-4 w-4" />
                   {locale === 'es' ? 'Transporte' : 'Transport'}
                 </h4>
-                <div className="space-y-1 text-sm text-slate-700">
+                <div className="space-y-1 text-body-sm text-foreground-secondary">
                   {transportDetails.map((field) => (
                     <p key={`expanded-transport-${field.label}`}>
-                      <span className="text-slate-500">{field.label}:</span> {field.value}
+                      <span className="text-foreground-muted">{field.label}:</span> {field.value}
                     </p>
                   ))}
                 </div>
@@ -378,15 +388,15 @@ export function DestinationCard({
             ) : null}
 
             {accommodationDetails.length > 0 && !destination.is_stopover ? (
-              <div className="rounded-lg bg-amber-50/50 p-3">
-                <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-700">
-                  <Hotel className="h-4 w-4" />
+              <div className="rounded-lg border border-border bg-elevated p-3">
+                <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-brand-accent">
+                  <Hotel aria-hidden="true" className="h-4 w-4" />
                   {locale === 'es' ? 'Hospedaje' : 'Accommodation'}
                 </h4>
-                <div className="space-y-1 text-sm text-slate-700">
+                <div className="space-y-1 text-body-sm text-foreground-secondary">
                   {accommodationDetails.map((field) => (
                     <p key={`expanded-accommodation-${field.label}`}>
-                      <span className="text-slate-500">{field.label}:</span> {field.value}
+                      <span className="text-foreground-muted">{field.label}:</span> {field.value}
                     </p>
                   ))}
                 </div>
@@ -394,22 +404,22 @@ export function DestinationCard({
             ) : null}
 
             {destination.notes ? (
-              <div className="rounded-lg bg-slate-50 p-3">
-                <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-                  <StickyNote className="h-4 w-4" />
+              <div className="rounded-lg border border-border bg-elevated p-3">
+                <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-foreground-primary">
+                  <StickyNote aria-hidden="true" className="h-4 w-4" />
                   {locale === 'es' ? 'Notas' : 'Notes'}
                 </h4>
-                <p className="text-sm text-slate-700">{destination.notes}</p>
+                <p className="text-body-sm text-foreground-secondary">{destination.notes}</p>
               </div>
             ) : null}
 
             {destination.budget !== null ? (
-              <div className="rounded-lg bg-emerald-50/50 p-3">
-                <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-700">
-                  <DollarSign className="h-4 w-4" />
+              <div className="rounded-lg border border-border bg-elevated p-3">
+                <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-success">
+                  <DollarSign aria-hidden="true" className="h-4 w-4" />
                   {locale === 'es' ? 'Presupuesto' : 'Budget'}
                 </h4>
-                <p className="text-sm text-slate-700">${destination.budget}</p>
+                <p className="text-body-sm text-foreground-secondary">${destination.budget}</p>
               </div>
             ) : null}
           </div>

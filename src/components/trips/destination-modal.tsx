@@ -213,6 +213,19 @@ export function DestinationModal({
     return () => document.removeEventListener('keydown', handleEsc);
   }, [open, isPending, onCancel]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [open]);
+
   const strings = useMemo(
     () => ({
       cityLabel: locale === 'es' ? 'Ciudad *' : 'City *',
@@ -313,7 +326,7 @@ export function DestinationModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-canvas/80 p-4 backdrop-blur-md animate-fade-in"
       onClick={() => {
         if (!isPending) {
           onCancel();
@@ -321,17 +334,17 @@ export function DestinationModal({
       }}
     >
       <div
-        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-scale-in sm:max-h-[85vh] max-sm:h-screen max-sm:max-h-screen max-sm:rounded-none"
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface text-foreground-primary shadow-modal animate-scale-in sm:max-h-[85vh] max-sm:h-screen max-sm:max-h-screen max-sm:rounded-none"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 p-6">
+        <div className="flex items-center justify-between border-b border-border p-6">
           <h2 className="text-xl font-bold">
             {locale === 'es' ? 'Editar' : 'Edit'} —{' '}
             {formState.city || (locale === 'es' ? 'Destino' : 'Destination')}
           </h2>
           <button
             type="button"
-            className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            className="rounded-lg p-2 text-foreground-muted transition-colors hover:bg-subtle hover:text-foreground-secondary"
             onClick={() => {
               if (!isPending) {
                 onCancel();
@@ -348,7 +361,7 @@ export function DestinationModal({
             <div className="flex items-center gap-2">
               <input
                 checked={formState.isStopover}
-                className="h-4 w-4 rounded border-slate-300 text-primary-600"
+                className="h-4 w-4 rounded border-border text-brand-primary"
                 disabled={isPending}
                 onChange={(event) => {
                   const checked = event.target.checked;
@@ -410,7 +423,7 @@ export function DestinationModal({
           <div
             className={cn(
               'rounded-xl border p-4 transition-colors',
-              showTransport ? 'border-primary-200 bg-primary-50/30' : 'border-slate-200'
+              showTransport ? 'border-brand-primary bg-subtle' : 'border-border'
             )}
           >
             <button
@@ -419,14 +432,14 @@ export function DestinationModal({
               onClick={() => setShowTransport((previous) => !previous)}
               type="button"
             >
-              <span className="flex items-center gap-2 font-semibold text-slate-900">
-                <TransportIcon className="h-4 w-4 text-primary-500" />
+              <span className="flex items-center gap-2 font-semibold text-foreground-primary">
+                <TransportIcon className="h-4 w-4 text-brand-primary" />
                 {strings.transportTitle}
               </span>
               {showTransport ? (
-                <ChevronUp className="h-4 w-4 text-slate-400" />
+                <ChevronUp className="h-4 w-4 text-foreground-muted" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-slate-400" />
+                <ChevronDown className="h-4 w-4 text-foreground-muted" />
               )}
             </button>
 
@@ -591,7 +604,7 @@ export function DestinationModal({
           <div
             className={cn(
               'rounded-xl border p-4 transition-colors',
-              showAccommodation ? 'border-amber-200 bg-amber-50/30' : 'border-slate-200'
+              showAccommodation ? 'border-warning bg-subtle' : 'border-border'
             )}
           >
             <button
@@ -600,14 +613,14 @@ export function DestinationModal({
               onClick={() => setShowAccommodation((previous) => !previous)}
               type="button"
             >
-              <span className="flex items-center gap-2 font-semibold text-slate-900">
-                <Hotel className="h-4 w-4 text-amber-500" />
+              <span className="flex items-center gap-2 font-semibold text-foreground-primary">
+                <Hotel className="h-4 w-4 text-warning" />
                 {strings.accommodationTitle}
               </span>
               {showAccommodation ? (
-                <ChevronUp className="h-4 w-4 text-slate-400" />
+                <ChevronUp className="h-4 w-4 text-foreground-muted" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-slate-400" />
+                <ChevronDown className="h-4 w-4 text-foreground-muted" />
               )}
             </button>
 
@@ -747,7 +760,7 @@ export function DestinationModal({
           <div
             className={cn(
               'rounded-xl border p-4 transition-colors',
-              showAdditional ? 'border-slate-200 bg-slate-50' : 'border-slate-200'
+              showAdditional ? 'border-border bg-subtle' : 'border-border'
             )}
           >
             <button
@@ -756,14 +769,14 @@ export function DestinationModal({
               onClick={() => setShowAdditional((previous) => !previous)}
               type="button"
             >
-              <span className="flex items-center gap-2 font-semibold text-slate-900">
-                <StickyNote className="h-4 w-4 text-slate-500" />
+              <span className="flex items-center gap-2 font-semibold text-foreground-primary">
+                <StickyNote className="h-4 w-4 text-foreground-muted" />
                 {strings.additionalTitle}
               </span>
               {showAdditional ? (
-                <ChevronUp className="h-4 w-4 text-slate-400" />
+                <ChevronUp className="h-4 w-4 text-foreground-muted" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-slate-400" />
+                <ChevronDown className="h-4 w-4 text-foreground-muted" />
               )}
             </button>
 
@@ -811,10 +824,10 @@ export function DestinationModal({
             ) : null}
           </div>
 
-          {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
+          {errorMessage ? <p className="text-sm text-danger">{errorMessage}</p> : null}
         </div>
 
-        <div className="sticky bottom-0 flex gap-3 border-t border-slate-200 bg-white p-4">
+        <div className="sticky bottom-0 flex gap-3 border-t border-border bg-surface p-4">
           <Button className="flex-1" disabled={isPending} onClick={handleSubmit}>
             {isPending ? (
               <>

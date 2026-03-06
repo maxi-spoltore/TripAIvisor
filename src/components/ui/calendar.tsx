@@ -10,29 +10,29 @@ type CalendarProps = DayPickerProps & {
 export function Calendar({ className, ...props }: CalendarProps) {
   return (
     <DayPicker
-      className={cn('p-3', className)}
+      className={cn('p-3 sm:p-4', className)}
       classNames={{
-        months: 'flex flex-col gap-2',
-        month: 'space-y-2',
+        months: 'flex flex-col gap-3',
+        month: 'space-y-3',
         month_caption: 'flex items-center justify-between px-1',
-        caption_label: 'text-sm font-medium text-slate-900',
+        caption_label: 'text-label-md font-semibold text-foreground-primary',
         nav: 'flex items-center gap-1',
         button_previous:
-          'inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-transparent p-0 text-slate-600 hover:bg-slate-100',
+          'inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface p-0 text-foreground-secondary transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
         button_next:
-          'inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-transparent p-0 text-slate-600 hover:bg-slate-100',
+          'inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface p-0 text-foreground-secondary transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
         month_grid: 'w-full border-collapse table-fixed',
         weekdays: '',
-        weekday: 'h-9 w-9 p-0 text-center align-middle text-xs font-medium text-slate-500',
+        weekday: 'h-9 w-10 p-0 text-center align-middle text-label-sm text-foreground-muted',
         weeks: '',
         week: '',
-        day: 'h-9 w-9 p-0 text-center align-middle text-sm',
+        day: 'h-10 w-10 p-0 text-center align-middle text-body-sm aria-selected:bg-transparent',
         day_button:
-          'inline-flex h-9 w-9 items-center justify-center rounded-md text-sm hover:bg-primary-50 hover:text-primary-700',
-        selected: 'bg-primary-600 text-white hover:bg-primary-700 hover:text-white',
-        today: 'font-bold text-primary-600',
-        outside: 'text-slate-300',
-        disabled: 'cursor-not-allowed text-slate-300'
+          'inline-flex h-10 w-10 items-center justify-center rounded-md text-body-sm text-foreground-primary transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas aria-selected:bg-brand-primary aria-selected:text-white aria-selected:hover:bg-brand-primary-hover aria-selected:hover:text-white',
+        selected: '',
+        today: 'font-semibold text-brand-primary',
+        outside: 'text-foreground-muted/50',
+        disabled: 'cursor-not-allowed text-foreground-muted/50 opacity-60'
       }}
       showOutsideDays
       {...props}

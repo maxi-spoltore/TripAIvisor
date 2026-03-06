@@ -20,6 +20,20 @@ export function ImportTripButton({ locale, label, loadingLabel }: ImportTripButt
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const navigateWithTransition = (href: string) => {
+    const viewTransitionDocument = document as Document & { startViewTransition?: (callback: () => void) => void };
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!viewTransitionDocument.startViewTransition || reducedMotion) {
+      router.push(href);
+      return;
+    }
+
+    viewTransitionDocument.startViewTransition(() => {
+      router.push(href);
+    });
+  };
+
   const handleOpenFilePicker = () => {
     if (isPending) {
       return;
@@ -53,7 +67,7 @@ export function ImportTripButton({ locale, label, loadingLabel }: ImportTripButt
               locale,
               data: parsedData
             });
-            router.push(`/${locale}/trips/${tripId}`);
+            navigateWithTransition(`/${locale}/trips/${tripId}`);
             router.refresh();
           } catch {
             setErrorMessage(locale === 'es' ? 'No se pudo importar el viaje.' : 'Could not import the trip.');
@@ -78,7 +92,7 @@ export function ImportTripButton({ locale, label, loadingLabel }: ImportTripButt
         {isPending ? <Spinner className="mr-2" /> : <Upload className="mr-2 h-4 w-4" />}
         {isPending ? loadingLabel : label}
       </Button>
-      {errorMessage ? <p className="text-xs text-red-600">{errorMessage}</p> : null}
+      {errorMessage ? <p className="text-xs text-danger">{errorMessage}</p> : null}
     </div>
   );
 }

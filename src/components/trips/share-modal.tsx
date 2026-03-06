@@ -35,6 +35,19 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
       return;
     }
 
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !isPending) {
         onClose();
@@ -78,7 +91,7 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-canvas/80 p-4 backdrop-blur-md animate-fade-in"
       onClick={() => {
         if (!isPending) {
           onClose();
@@ -86,15 +99,15 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
       }}
     >
       <div
-        className="w-full max-w-xl animate-scale-in rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
+        className="w-full max-w-xl animate-scale-in rounded-2xl border border-border bg-surface p-6 text-foreground-primary shadow-modal"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <Share2 className="h-5 w-5 text-primary-500" />
+            <Share2 className="h-5 w-5 text-brand-primary" />
             {tShare('title')}
           </h2>
-          <p className="mt-1 text-sm text-slate-500">{tShare('viewOnly')}</p>
+          <p className="mt-1 text-sm text-foreground-muted">{tShare('viewOnly')}</p>
         </div>
 
         {!shareUrl ? (
@@ -111,10 +124,10 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
         ) : (
           <div className="space-y-3">
             <div className="flex gap-2">
-              <Input className="bg-slate-50 font-mono text-sm" readOnly value={shareUrl} />
+              <Input className="bg-subtle font-mono text-sm" readOnly value={shareUrl} />
               <Button
                 aria-label={tShare('copyLink')}
-                className={cn('transition-all duration-200', copied && 'border-emerald-400 bg-emerald-50 text-emerald-600')}
+                className={cn('transition-all duration-200', copied && 'border-success bg-subtle text-success')}
                 disabled={isPending}
                 onClick={handleCopyLink}
                 type="button"
@@ -124,11 +137,11 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
                 <span className="sr-only">{tShare('copyLink')}</span>
               </Button>
             </div>
-            {copied ? <p className="text-sm text-emerald-700">{tShare('copied')}</p> : null}
+            {copied ? <p className="text-sm text-success">{tShare('copied')}</p> : null}
           </div>
         )}
 
-        {errorMessage ? <p className="mt-3 text-sm text-red-600">{errorMessage}</p> : null}
+        {errorMessage ? <p className="mt-3 text-sm text-danger">{errorMessage}</p> : null}
 
         <div className="mt-6 flex justify-end">
           <Button disabled={isPending} onClick={onClose} type="button" variant="outline">

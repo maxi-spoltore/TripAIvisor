@@ -13,20 +13,20 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 via-white to-accent-50 p-8">
-      <div className="flex w-full max-w-sm flex-col gap-8 animate-slide-up">
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-600 shadow-lg shadow-primary-200">
-            <MapPin className="h-7 w-7 text-white" />
+    <main className="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6">
+      <div className="w-full max-w-sm space-y-6 rounded-2xl border border-border bg-surface p-6 shadow-modal animate-slide-up sm:p-8">
+        <div className="space-y-3 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-brand-primary text-white shadow-floating">
+            <MapPin aria-hidden="true" className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Trip<span className="text-primary-600">AI</span>visor
+          <h1 className="font-display text-display-md font-bold tracking-tight text-foreground-primary">
+            Trip<span className="text-brand-primary">AI</span>visor
           </h1>
-          <p className="text-sm text-slate-500">{t('tagline')}</p>
+          <p className="text-body-sm text-foreground-secondary">{t('tagline')}</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50">
-          <h2 className="mb-6 text-center text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-border bg-elevated p-4 sm:p-5">
+          <h2 className="mb-4 text-center text-title-md font-semibold text-foreground-primary">
             {t('welcomeBack')}
           </h2>
           <Button className="w-full gap-2" onClick={handleGoogleLogin} type="button">

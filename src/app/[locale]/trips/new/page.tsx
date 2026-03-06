@@ -19,27 +19,27 @@ export default async function NewTripPage({ params }: NewTripPageProps) {
   const createTripAction = createTripAndRedirectAction.bind(null, locale);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-8">
-      <Card className="overflow-hidden">
-        <div className="h-1 bg-gradient-to-r from-primary-400 to-primary-600" />
-        <CardHeader>
-          <CardTitle className="text-xl">{tTrips('newTrip')}</CardTitle>
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8">
+      <Card className="overflow-hidden border-border bg-surface shadow-card">
+        <div className="h-1.5 bg-gradient-to-r from-brand-route via-brand-primary to-brand-accent" />
+        <CardHeader className="pb-4">
+          <CardTitle className="font-display text-title-lg text-foreground-primary sm:text-display-md">{tTrips('newTrip')}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <form action={createTripAction} className="flex flex-col gap-4">
+        <CardContent className="space-y-5">
+          <form action={createTripAction} className="space-y-4">
             <Input name="title" placeholder={tTrips('defaultTitle')} />
-            <div className="space-y-1">
-              <Label htmlFor="departure_city">{tTrips('departureCity')}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-label-md text-foreground-secondary" htmlFor="departure_city">{tTrips('departureCity')}</Label>
               <Input id="departure_city" name="departure_city" placeholder={tTrips('departureCityPlaceholder')} />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="return_city">{tTrips('returnCity')}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-label-md text-foreground-secondary" htmlFor="return_city">{tTrips('returnCity')}</Label>
               <Input id="return_city" name="return_city" placeholder={tTrips('returnCityPlaceholder')} />
             </div>
-            <div className="flex items-center gap-2">
-              <Button type="submit">{tCommon('save')}</Button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button className="sm:w-auto" type="submit">{tCommon('save')}</Button>
               <Link
-                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
+                className="inline-flex h-11 items-center justify-center rounded-md border border-border bg-surface px-4 text-body-sm font-semibold text-foreground-primary transition-colors duration-base ease-standard hover:bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
                 href={`/${locale}/trips`}
               >
                 {tCommon('cancel')}

@@ -47,7 +47,7 @@ export function DropdownMenuContent({ className, ...props }: HTMLAttributes<HTML
   return (
     <div
       className={cn(
-        'absolute right-0 z-10 mt-2 min-w-32 rounded-md border border-slate-200 bg-white p-1 shadow-md',
+        'absolute right-0 z-10 mt-2 min-w-32 rounded-md border border-border bg-elevated p-1 shadow-floating',
         className
       )}
       {...props}
@@ -59,12 +59,15 @@ export function DropdownMenuItem({ className, ...props }: HTMLAttributes<HTMLBut
   return (
     <button
       type="button"
-      className={cn('flex w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-slate-100', className)}
+      className={cn(
+        'flex w-full rounded-sm px-2 py-1.5 text-left text-sm text-foreground-secondary transition-colors hover:bg-subtle hover:text-foreground-primary',
+        className
+      )}
       {...props}
     />
   );
 }
 
 export function DropdownMenuSeparator({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('my-1 h-px bg-slate-200', className)} {...props} />;
+  return <div className={cn('my-1 h-px bg-border', className)} {...props} />;
 }

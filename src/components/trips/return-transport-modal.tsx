@@ -289,7 +289,7 @@ export function ReturnTransportModal({
       }}
       open={open}
     >
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto max-sm:h-screen max-sm:max-h-screen max-sm:rounded-none">
         <DialogHeader>
           <DialogTitle>{tTrips('editReturn')}</DialogTitle>
           <DialogDescription>
@@ -300,8 +300,8 @@ export function ReturnTransportModal({
         </DialogHeader>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="rounded-lg border border-primary-100 bg-primary-50/40 p-4">
-            <h3 className="mb-3 text-sm font-semibold text-primary-700">{tTransport('title')}</h3>
+          <div className="rounded-lg border border-border bg-subtle p-4">
+            <h3 className="mb-3 text-sm font-semibold text-brand-primary">{tTransport('title')}</h3>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
@@ -317,7 +317,7 @@ export function ReturnTransportModal({
                 >
                   <SelectTrigger>
                     <span className="inline-flex items-center gap-2 text-sm">
-                      <TransportIcon className="h-4 w-4 text-primary-600" />
+                      <TransportIcon className="h-4 w-4 text-brand-primary" />
                       {transportLabel}
                     </span>
                   </SelectTrigger>
@@ -448,8 +448,8 @@ export function ReturnTransportModal({
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <h3 className="mb-3 text-sm font-semibold text-slate-800">{tTransport('flightItinerary')}</h3>
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <h3 className="mb-3 text-sm font-semibold text-foreground-primary">{tTransport('flightItinerary')}</h3>
 
             {legForms.length === 0 ? (
               <Button disabled={isPending} onClick={handleAddLeg} type="button" variant="outline">
@@ -458,9 +458,9 @@ export function ReturnTransportModal({
             ) : (
               <div className="space-y-3">
                 {legForms.map((leg, index) => (
-                  <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3" key={`leg-form-${index}`}>
+                  <div className="rounded-lg border border-border bg-subtle p-3" key={`leg-form-${index}`}>
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <h4 className="text-sm font-semibold text-slate-900">{tTransport('legN', { n: index + 1 })}</h4>
+                      <h4 className="text-sm font-semibold text-foreground-primary">{tTransport('legN', { n: index + 1 })}</h4>
                       <Button
                         disabled={isPending || legForms.length === 1}
                         onClick={() => handleRemoveLeg(index)}
@@ -481,7 +481,7 @@ export function ReturnTransportModal({
                           value={leg.origin_city}
                         />
                         {index === 0 && previousDestinationMismatch ? (
-                          <p className="text-xs text-amber-600">{tTransport('previousDestinationHint')}</p>
+                          <p className="text-xs text-warning">{tTransport('previousDestinationHint')}</p>
                         ) : null}
                       </div>
 
@@ -493,7 +493,7 @@ export function ReturnTransportModal({
                           value={leg.destination_city}
                         />
                         {index === legForms.length - 1 && returnCityMismatch ? (
-                          <p className="text-xs text-amber-600">{tTransport('returnCityHint')}</p>
+                          <p className="text-xs text-warning">{tTransport('returnCityHint')}</p>
                         ) : null}
                       </div>
 

@@ -1,11 +1,11 @@
 import { ArrowLeft } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { DestinationList } from '@/components/trips/destination-list';
 import { TripCityBanner } from '@/components/trips/trip-city-banner';
 import { TripHeader } from '@/components/trips/trip-header';
+import { ViewTransitionLink } from '@/components/ui/view-transition-link';
 import { auth } from '@/lib/auth';
 import { getTripById } from '@/lib/db/queries/trips';
 import { calculateDate } from '@/lib/utils/dates';
@@ -60,16 +60,20 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
   const totalDays = trip.destinations.reduce((acc, destination) => acc + destination.duration, 0);
   const returnDate = calculateDate(trip.start_date, travelDays + totalDays);
   const exportedTrip = exportTrip(trip);
+  const transitionName = `trip-shell-${trip.trip_id}`;
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-8">
-      <Link
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+    <main
+      className="vt-route-shell mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-6 sm:py-6 md:px-8 md:py-8"
+      style={{ viewTransitionName: transitionName }}
+    >
+      <ViewTransitionLink
+        className="inline-flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-body-sm font-semibold text-foreground-secondary transition-colors duration-fast ease-standard hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
         href={`/${locale}/trips`}
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft aria-hidden="true" className="h-4 w-4" />
         {tTrips('backToTrips')}
-      </Link>
+      </ViewTransitionLink>
 
       <TripHeader
         endDate={trip.end_date}
