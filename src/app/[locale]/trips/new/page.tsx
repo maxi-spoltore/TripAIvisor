@@ -24,6 +24,7 @@ export default async function NewTripPage({ params }: NewTripPageProps) {
         <div className="h-1.5 bg-gradient-to-r from-brand-route via-brand-primary to-brand-accent" />
         <CardHeader className="pb-4">
           <CardTitle className="font-display text-title-lg text-foreground-primary sm:text-display-md">{tTrips('newTrip')}</CardTitle>
+          <p className="text-body-sm text-foreground-secondary">{tTrips('newTripHint')}</p>
         </CardHeader>
         <CardContent className="space-y-5">
           <form action={createTripAction} className="space-y-4">
