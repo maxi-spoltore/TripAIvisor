@@ -16,7 +16,8 @@
     "noDateSet": "Sin fecha definida",
     "confirm": "Confirmar",
     "selectDate": "Selecciona una fecha",
-    "confirmDelete": "¿Estás seguro de que deseas eliminar este viaje?"
+    "confirmDelete": "¿Estás seguro de que deseas eliminar este viaje?",
+    "deleting": "Eliminando..."
   },
   "auth": {
     "signIn": "Iniciar sesión",

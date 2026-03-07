@@ -59,7 +59,7 @@ export default async function TripsListPage({ params }: TripsListPageProps) {
       </div>
 
       {trips.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border-strong bg-surface px-5 py-12 text-center shadow-card sm:py-16">
+        <div className="animate-fade-in flex flex-col items-center gap-4 rounded-xl border border-dashed border-border-strong bg-surface px-5 py-12 text-center shadow-card sm:py-16">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-accent-soft sm:h-16 sm:w-16">
             <MapPin aria-hidden="true" className="h-7 w-7 text-brand-primary sm:h-8 sm:w-8" />
           </div>
@@ -71,19 +71,24 @@ export default async function TripsListPage({ params }: TripsListPageProps) {
         </div>
       ) : (
         <div className="grid gap-4 sm:gap-5 lg:grid-cols-2">
-          {trips.map((trip) => {
+          {trips.map((trip, index) => {
             const stats = tripStats[trip.trip_id] ?? { destinationCount: 0, totalDays: 0 };
 
             return (
-              <TripCard
+              <div
                 key={trip.trip_id}
-                destinationCount={stats.destinationCount}
-                editLabel={tCommon('edit')}
-                locale={locale}
-                selectDateLabel={tCommon('selectDate')}
-                totalDays={stats.totalDays}
-                trip={trip}
-              />
+                className="animate-stagger-slide-up"
+                style={{ '--stagger-index': index } as React.CSSProperties}
+              >
+                <TripCard
+                  destinationCount={stats.destinationCount}
+                  editLabel={tCommon('edit')}
+                  locale={locale}
+                  selectDateLabel={tCommon('selectDate')}
+                  totalDays={stats.totalDays}
+                  trip={trip}
+                />
+              </div>
             );
           })}
         </div>

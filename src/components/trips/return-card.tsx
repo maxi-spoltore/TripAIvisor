@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
-import { Bus, ChevronDown, ChevronUp, Edit2, Plane, Train } from 'lucide-react';
+import { Bus, ChevronDown, Edit2, Plane, Train } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { updateReturnTransportAction, updateTransportLegsAction } from '@/app/actions/trips';
 import { Button } from '@/components/ui/button';
@@ -221,7 +221,7 @@ export function ReturnCard({
 
   return (
     <>
-      <div className="rounded-xl border border-border bg-surface shadow-card">
+      <div className="rounded-xl border border-brand-accent/20 bg-brand-accent/[0.03] shadow-card">
         <div className="p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
@@ -246,7 +246,7 @@ export function ReturnCard({
               {hasLegsItinerary ? (
                 <>
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="flex items-center gap-2 text-sm font-semibold text-brand-primary">
+                    <h4 className="flex items-center gap-2 text-sm font-semibold text-brand-accent">
                       <Plane className="h-4 w-4" />
                       {tTransport('flightItinerary')} · {sortedLegs.length}
                     </h4>
@@ -261,74 +261,75 @@ export function ReturnCard({
                         variant="ghost"
                       >
                         {isLegsCollapsed ? tCommon('expand') : tCommon('collapse')}
-                        {isLegsCollapsed ? (
-                          <ChevronDown className="ml-1 h-4 w-4" />
-                        ) : (
-                          <ChevronUp className="ml-1 h-4 w-4" />
-                        )}
+                        <ChevronDown className={cn('ml-1 h-4 w-4 transition-transform duration-base ease-standard', !isLegsCollapsed && 'rotate-180')} />
                       </Button>
                     ) : null}
                   </div>
 
-                  {!isLegsCollapsed || sortedLegs.length < 3 ? (
-                    <div className="mt-3 space-y-3 text-sm text-foreground-secondary">
-                      {sortedLegs.map((leg, index) => {
-                        const nextLeg = sortedLegs[index + 1] ?? null;
-                        const reservation = [leg.booking_number, leg.booking_code].filter(Boolean).join('/');
-                        const companyLine = [leg.company, reservation].filter(Boolean).join(' ');
-                        const detailLine = [
-                          companyLine || null,
-                          leg.terminal ? `${tTransport('terminal')} ${leg.terminal}` : null
-                        ]
-                          .filter(Boolean)
-                          .join(' | ');
-                        const timeLine = [
-                          leg.departure_time ? `${tTransport('departs')} ${leg.departure_time}` : null,
-                          leg.arrival_time
-                            ? `${tTransport('arrives')} ${leg.arrival_time}${
-                                leg.day_offset > 0 ? ` (${tTransport('dayOffset', { n: leg.day_offset })})` : ''
-                              }`
-                            : null
-                        ]
-                          .filter(Boolean)
-                          .join(' · ');
+                  <div className={cn(
+                    'grid transition-[grid-template-rows] duration-slow ease-emphasized',
+                    !isLegsCollapsed || sortedLegs.length < 3 ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                  )}>
+                    <div className="overflow-hidden [min-height:0]">
+                      <div className="mt-3 space-y-3 text-sm text-foreground-secondary">
+                        {sortedLegs.map((leg, index) => {
+                          const nextLeg = sortedLegs[index + 1] ?? null;
+                          const reservation = [leg.booking_number, leg.booking_code].filter(Boolean).join('/');
+                          const companyLine = [leg.company, reservation].filter(Boolean).join(' ');
+                          const detailLine = [
+                            companyLine || null,
+                            leg.terminal ? `${tTransport('terminal')} ${leg.terminal}` : null
+                          ]
+                            .filter(Boolean)
+                            .join(' | ');
+                          const timeLine = [
+                            leg.departure_time ? `${tTransport('departs')} ${leg.departure_time}` : null,
+                            leg.arrival_time
+                              ? `${tTransport('arrives')} ${leg.arrival_time}${
+                                  leg.day_offset > 0 ? ` (${tTransport('dayOffset', { n: leg.day_offset })})` : ''
+                                }`
+                              : null
+                          ]
+                            .filter(Boolean)
+                            .join(' · ');
 
-                        let layoverMinutes: number | null = null;
+                          let layoverMinutes: number | null = null;
 
-                        if (nextLeg && leg.arrival_time && nextLeg.departure_time) {
-                          const computedLayover = computeLayoverMinutes(
-                            leg.arrival_time,
-                            leg.day_offset,
-                            nextLeg.departure_time,
-                            nextLeg.day_offset
-                          );
-                          layoverMinutes = computedLayover >= 0 ? computedLayover : null;
-                        }
+                          if (nextLeg && leg.arrival_time && nextLeg.departure_time) {
+                            const computedLayover = computeLayoverMinutes(
+                              leg.arrival_time,
+                              leg.day_offset,
+                              nextLeg.departure_time,
+                              nextLeg.day_offset
+                            );
+                            layoverMinutes = computedLayover >= 0 ? computedLayover : null;
+                          }
 
-                        return (
-                          <div key={`return-leg-${leg.leg_id}`}>
-                            <p className="font-medium text-foreground-primary">{tTransport('legN', { n: index + 1 })}</p>
-                            <p>
-                              {(leg.origin_city ?? '-') + ' -> ' + (leg.destination_city ?? '-')}
-                            </p>
-                            {detailLine ? <p className="text-foreground-secondary">{detailLine}</p> : null}
-                            {timeLine ? <p className="text-foreground-secondary">{timeLine}</p> : null}
-
-                            {layoverMinutes !== null ? (
-                              <p
-                                className={cn(
-                                  'my-2 text-center text-xs font-medium text-foreground-muted',
-                                  layoverMinutes < 60 ? 'text-warning' : null
-                                )}
-                              >
-                                -- {tTransport('connection', { duration: formatDuration(layoverMinutes) })} --
+                          return (
+                            <div key={`return-leg-${leg.leg_id}`}>
+                              <p className="font-medium text-brand-route">{tTransport('legN', { n: index + 1 })}</p>
+                              <p>
+                                {(leg.origin_city ?? '-') + ' -> ' + (leg.destination_city ?? '-')}
                               </p>
-                            ) : null}
-                          </div>
-                        );
-                      })}
+                              {detailLine ? <p className="text-foreground-secondary">{detailLine}</p> : null}
+                              {timeLine ? <p className="text-foreground-secondary">{timeLine}</p> : null}
+
+                              {layoverMinutes !== null ? (
+                                <p
+                                  className={cn(
+                                    'my-2 text-center text-xs font-medium text-foreground-muted',
+                                    layoverMinutes < 60 ? 'text-warning' : null
+                                  )}
+                                >
+                                  -- {tTransport('connection', { duration: formatDuration(layoverMinutes) })} --
+                                </p>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  ) : null}
+                  </div>
 
                   {typeof totalJourneyMinutes === 'number' && totalJourneyMinutes >= 0 ? (
                     <p className="mt-3 text-sm font-medium text-foreground-secondary">
@@ -338,7 +339,7 @@ export function ReturnCard({
                 </>
               ) : (
                 <>
-                  <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-brand-primary">
+                  <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-brand-accent">
                     <TransportIcon className="h-4 w-4" />
                     {tTransport('title')}
                   </h4>
@@ -353,7 +354,7 @@ export function ReturnCard({
 
                   {travelDays > 0 ? (
                     <div className="mt-3">
-                      <span className="inline-flex rounded-full bg-subtle px-2.5 py-0.5 text-xs font-semibold text-brand-primary">
+                      <span className="inline-flex rounded-full bg-brand-accent-soft px-2.5 py-0.5 text-xs font-semibold text-brand-primary">
                         {tTrips('travelDaysBadge', { count: travelDays })}
                       </span>
                     </div>

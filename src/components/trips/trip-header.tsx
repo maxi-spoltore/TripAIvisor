@@ -202,7 +202,7 @@ export function TripHeader({ locale, tripId, title, startDate, endDate, totalDay
         <div className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-3 space-x-2">
-              <label className="text-label-md text-foreground-muted" htmlFor="trip-start-date">
+              <label className="text-label-md text-brand-primary" htmlFor="trip-start-date">
                 {tTrips('startDateLabel')}
               </label>
               <DatePicker
@@ -216,7 +216,7 @@ export function TripHeader({ locale, tripId, title, startDate, endDate, totalDay
             </div>
 
             <div className="space-y-3 space-x-2">
-              <label className="text-label-md text-foreground-muted" htmlFor="trip-end-date">
+              <label className="text-label-md text-brand-accent" htmlFor="trip-end-date">
                 {tTrips('endDateLabel')}
               </label>
               <DatePicker
@@ -236,7 +236,7 @@ export function TripHeader({ locale, tripId, title, startDate, endDate, totalDay
             </span>
           ) : null}
 
-          {dateError ? <p className="text-body-sm text-danger">{dateError}</p> : null}
+          {dateError ? <p className="animate-slide-up text-body-sm text-danger">{dateError}</p> : null}
         </div>
       </div>
 

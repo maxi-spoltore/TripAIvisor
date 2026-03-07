@@ -2,7 +2,6 @@ import { memo } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   ChevronDown,
-  ChevronUp,
   DollarSign,
   Edit2,
   Hotel,
@@ -245,7 +244,7 @@ export const DestinationCard = memo(function DestinationCard({
                   'inline-flex rounded-pill px-2.5 py-1 text-label-md font-semibold',
                   destination.is_stopover
                     ? 'bg-brand-accent-soft text-brand-primary'
-                    : 'bg-subtle text-foreground-secondary'
+                    : 'bg-brand-accent-soft text-brand-primary'
                 )}
               >
                 {destination.is_stopover
@@ -314,23 +313,28 @@ export const DestinationCard = memo(function DestinationCard({
           </div>
         </div>
 
-        {!expanded ? (
-          <div className="space-y-1.5 text-body-sm text-foreground-secondary">
-            {transportPreview.length > 0 ? (
-              <p className="flex items-center gap-2">
-                <TransportIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-route" />
-                <span>{transportPreview.map((field) => field.value).join(' · ')}</span>
-              </p>
-            ) : null}
+        <div className={cn(
+          'grid transition-[grid-template-rows] duration-base ease-standard',
+          !expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        )}>
+          <div className="overflow-hidden [min-height:0]">
+            <div className="space-y-1.5 text-body-sm text-foreground-secondary">
+              {transportPreview.length > 0 ? (
+                <p className="flex items-center gap-2">
+                  <TransportIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-route" />
+                  <span>{transportPreview.map((field) => field.value).join(' · ')}</span>
+                </p>
+              ) : null}
 
-            {accommodationPreview.length > 0 && !destination.is_stopover ? (
-              <p className="flex items-center gap-2">
-                <Hotel aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand-accent" />
-                <span>{accommodationPreview.map((field) => field.value).join(' · ')}</span>
-              </p>
-            ) : null}
+              {accommodationPreview.length > 0 && !destination.is_stopover ? (
+                <p className="flex items-center gap-2">
+                  <Hotel aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand-accent" />
+                  <span>{accommodationPreview.map((field) => field.value).join(' · ')}</span>
+                </p>
+              ) : null}
+            </div>
           </div>
-        ) : null}
+        </div>
 
         {hasMoreContent ? (
           <button
@@ -341,65 +345,70 @@ export const DestinationCard = memo(function DestinationCard({
             {expanded
               ? tCommon('hideDetails')
               : tCommon('showDetails')}
-            {expanded ? <ChevronUp aria-hidden="true" className="h-4 w-4" /> : <ChevronDown aria-hidden="true" className="h-4 w-4" />}
+            <ChevronDown aria-hidden="true" className={cn('h-4 w-4 transition-transform duration-base ease-standard', expanded && 'rotate-180')} />
           </button>
         ) : null}
 
-        {expanded ? (
-          <div className="space-y-3">
-            {transportDetails.length > 0 ? (
-              <div className="border-t border-border pt-3">
-                <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-brand-primary">
-                  <TransportIcon aria-hidden="true" className="h-4 w-4" />
-                  {tTransport('title')}
-                </h4>
-                <div className="space-y-1 text-body-sm text-foreground-secondary">
-                  {transportDetails.map((field) => (
-                    <p key={`expanded-transport-${field.label}`}>
-                      <span className="text-foreground-muted">{field.label}:</span> {field.value}
-                    </p>
-                  ))}
+        <div className={cn(
+          'grid transition-[grid-template-rows] duration-slow ease-emphasized',
+          expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        )}>
+          <div className="overflow-hidden [min-height:0]">
+            <div className={cn('space-y-3', expanded && 'animate-content-reveal')}>
+              {transportDetails.length > 0 ? (
+                <div className="border-t border-border pt-3">
+                  <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-brand-primary">
+                    <TransportIcon aria-hidden="true" className="h-4 w-4" />
+                    {tTransport('title')}
+                  </h4>
+                  <div className="space-y-1 text-body-sm text-foreground-secondary">
+                    {transportDetails.map((field) => (
+                      <p key={`expanded-transport-${field.label}`}>
+                        <span className="text-foreground-muted">{field.label}:</span> {field.value}
+                      </p>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {accommodationDetails.length > 0 && !destination.is_stopover ? (
-              <div className="border-t border-border pt-3">
-                <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-brand-accent">
-                  <Hotel aria-hidden="true" className="h-4 w-4" />
-                  {tAccommodation('title')}
-                </h4>
-                <div className="space-y-1 text-body-sm text-foreground-secondary">
-                  {accommodationDetails.map((field) => (
-                    <p key={`expanded-accommodation-${field.label}`}>
-                      <span className="text-foreground-muted">{field.label}:</span> {field.value}
-                    </p>
-                  ))}
+              {accommodationDetails.length > 0 && !destination.is_stopover ? (
+                <div className="border-t border-border pt-3">
+                  <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-brand-accent">
+                    <Hotel aria-hidden="true" className="h-4 w-4" />
+                    {tAccommodation('title')}
+                  </h4>
+                  <div className="space-y-1 text-body-sm text-foreground-secondary">
+                    {accommodationDetails.map((field) => (
+                      <p key={`expanded-accommodation-${field.label}`}>
+                        <span className="text-foreground-muted">{field.label}:</span> {field.value}
+                      </p>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {destination.notes ? (
-              <div className="border-t border-border pt-3">
-                <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-foreground-primary">
-                  <StickyNote aria-hidden="true" className="h-4 w-4" />
-                  {tDestinations('notes')}
-                </h4>
-                <p className="text-body-sm text-foreground-secondary">{destination.notes}</p>
-              </div>
-            ) : null}
+              {destination.notes ? (
+                <div className="border-t border-border pt-3">
+                  <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-warning">
+                    <StickyNote aria-hidden="true" className="h-4 w-4" />
+                    {tDestinations('notes')}
+                  </h4>
+                  <p className="text-body-sm text-foreground-secondary">{destination.notes}</p>
+                </div>
+              ) : null}
 
-            {destination.budget !== null ? (
-              <div className="border-t border-border pt-3">
-                <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-success">
-                  <DollarSign aria-hidden="true" className="h-4 w-4" />
-                  {tDestinations('budget')}
-                </h4>
-                <p className="text-body-sm text-foreground-secondary">${destination.budget}</p>
-              </div>
-            ) : null}
+              {destination.budget !== null ? (
+                <div className="border-t border-border pt-3">
+                  <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-success">
+                    <DollarSign aria-hidden="true" className="h-4 w-4" />
+                    {tDestinations('budget')}
+                  </h4>
+                  <p className="text-body-sm text-foreground-secondary">${destination.budget}</p>
+                </div>
+              ) : null}
+            </div>
           </div>
-        ) : null}
+        </div>
       </div>
     </div>
   );

@@ -510,12 +510,12 @@ export function DestinationList({
   return (
     <section className="space-y-4">
       {errorMessage ? (
-        <p className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-body-sm text-danger">{errorMessage}</p>
+        <p className="animate-slide-up rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-body-sm text-danger">{errorMessage}</p>
       ) : null}
 
       {items.length === 0 ? (
         <>
-          <p className="rounded-lg border border-dashed border-border-strong bg-surface p-4 text-body-sm text-foreground-secondary">
+          <p className="animate-fade-in rounded-lg border border-dashed border-border-strong bg-surface p-4 text-body-sm text-foreground-secondary">
             {tDestinations('noDestinationsHint')}
           </p>
           {addDestinationForm(false)}
@@ -545,7 +545,7 @@ export function DestinationList({
           {items.map((destination, index) => (
             <Fragment key={destination.destination_id}>
               {insertAtPosition === index ? (
-                <div className="pb-4">{addDestinationForm(true, index)}</div>
+                <div className="animate-slide-up pb-4">{addDestinationForm(true, index)}</div>
               ) : (
                 <div className="group/insert relative flex h-7 items-center">
                   <button
@@ -649,11 +649,18 @@ export function DestinationList({
             <DialogDescription>{tDestinations('confirmDeleteDestination')}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button onClick={() => dispatch({ type: 'CANCEL_DELETE' })} variant="outline">
+            <Button disabled={isPending} onClick={() => dispatch({ type: 'CANCEL_DELETE' })} variant="outline">
               {tCommon('cancel')}
             </Button>
-            <Button onClick={handleConfirmDeleteDestination} variant="destructive">
-              {tCommon('delete')}
+            <Button disabled={isPending} onClick={handleConfirmDeleteDestination} variant="destructive">
+              {isPending ? (
+                <>
+                  <Spinner className="mr-2" />
+                  {tCommon('deleting')}
+                </>
+              ) : (
+                tCommon('delete')
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

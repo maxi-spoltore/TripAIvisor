@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { createTripAndRedirectAction } from '@/app/actions/trips';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SubmitButton } from '@/components/ui/submit-button';
 
 type NewTripPageProps = {
   params: {
@@ -38,7 +38,7 @@ export default async function NewTripPage({ params }: NewTripPageProps) {
               <Input id="return_city" name="return_city" placeholder={tTrips('returnCityPlaceholder')} />
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <Button className="sm:w-auto" type="submit">{tCommon('save')}</Button>
+              <SubmitButton className="sm:w-auto" pendingLabel={tCommon('saving')}>{tCommon('save')}</SubmitButton>
               <Link
                 className="inline-flex h-11 items-center justify-center rounded-md border border-border bg-surface px-4 text-body-sm font-semibold text-foreground-primary transition-colors duration-base ease-standard hover:bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
                 href={`/${locale}/trips`}

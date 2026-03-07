@@ -77,13 +77,13 @@ export function TripCityBanner({ locale, tripId, departureCity, returnCity }: Tr
   return (
     <div className="grid gap-3 sm:items-center md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-4">
       <div className="space-y-1">
-        <span className="text-label-sm uppercase tracking-[0.03em] text-foreground-muted">{tTrips('departureCity')}</span>
+        <span className="text-label-sm uppercase tracking-[0.03em] text-brand-primary">{tTrips('departureCity')}</span>
         <div className="flex items-center gap-2 text-body-md font-semibold text-foreground-primary">
           <PlaneTakeoff aria-hidden="true" className="h-4 w-4 shrink-0 text-route" />
           {editingDeparture ? (
             <Input
               autoFocus
-              className="h-10 min-w-0"
+              className="h-10 min-w-0 animate-fade-in"
               disabled={isPending}
               onBlur={() => {
                 setEditingDeparture(false);
@@ -114,7 +114,7 @@ export function TripCityBanner({ locale, tripId, departureCity, returnCity }: Tr
             />
           ) : (
             <button
-              className="min-w-0 rounded-md px-1 py-1 text-left text-body-md font-semibold text-foreground-primary transition-colors duration-fast ease-standard hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+              className="animate-fade-in min-w-0 rounded-md px-1 py-1 text-left text-body-md font-semibold text-foreground-primary transition-colors duration-fast ease-standard hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
               disabled={isPending}
               onClick={() => setEditingDeparture(true)}
               type="button"
@@ -128,12 +128,12 @@ export function TripCityBanner({ locale, tripId, departureCity, returnCity }: Tr
       <div className="hidden h-0.5 w-14 rounded-full bg-gradient-to-r from-route/35 to-brand-primary/45 md:block" />
 
       <div className="space-y-1">
-        <span className="text-label-sm uppercase tracking-[0.03em] text-foreground-muted">{tTrips('returnCity')}</span>
+        <span className="text-label-sm uppercase tracking-[0.03em] text-brand-accent">{tTrips('returnCity')}</span>
         <div className="flex items-center gap-2 text-body-md font-semibold text-foreground-primary">
           {editingReturn ? (
             <Input
               autoFocus
-              className="h-10 min-w-0"
+              className="h-10 min-w-0 animate-fade-in"
               disabled={isPending}
               onBlur={() => {
                 setEditingReturn(false);
@@ -164,7 +164,7 @@ export function TripCityBanner({ locale, tripId, departureCity, returnCity }: Tr
             />
           ) : (
             <button
-              className="min-w-0 rounded-md px-1 py-1 text-left text-body-md font-semibold text-foreground-primary transition-colors duration-fast ease-standard hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+              className="animate-fade-in min-w-0 rounded-md px-1 py-1 text-left text-body-md font-semibold text-foreground-primary transition-colors duration-fast ease-standard hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
               disabled={isPending}
               onClick={() => setEditingReturn(true)}
               type="button"

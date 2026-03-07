@@ -64,3 +64,29 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+## Design Context
+
+### Users
+Mixed audience — from casual vacationers to frequent travelers organizing complex multi-city itineraries. The app should feel intuitive for first-timers while being powerful enough for experienced planners. Users are in planning mode: building routes, comparing options, and organizing details.
+
+### Brand Personality
+**Friendly, smart, reliable** — like a knowledgeable travel buddy who has everything organized. Approachable and trustworthy, never cold or corporate.
+
+### Emotional Goals
+- **Excitement & anticipation**: The interface should channel the thrill of planning an adventure. Visuals, motion, and color should feel inspiring and energizing.
+- **Delight & discovery**: Sprinkle playful moments of joy as users build their itinerary — small surprises, satisfying interactions, rewarding feedback.
+
+### Aesthetic Direction
+- **References**: Wanderlog/TripIt (itinerary-focused, detail-oriented), Airbnb/Booking.com (warm, visual, travel-flavored)
+- **Visual tone**: Warm and inviting with a travel-forward identity. Not sterile productivity — it should feel like planning a trip, not managing a spreadsheet.
+- **Theme**: Light + dark mode. Warm canvas (`#f6f7f5`), deep teal primary (`#0a4d68`), coral accent (`#ff6b4a`), teal route (`#2cb1a5`).
+- **Typography**: Manrope (body) + Space Grotesk (display). Custom type scale from `label-sm` to `display-lg`.
+- **Motion**: Purposeful animations — staggered reveals, view transitions, subtle hover lifts. Respects `prefers-reduced-motion`.
+
+### Design Principles
+1. **Travel-first identity** — Every design choice should reinforce that this is a trip planner, not a generic tool. Use travel metaphors, route-inspired visuals, and destination imagery where appropriate.
+2. **Progressive detail** — Show the right level of information at each stage. Summaries first, details on demand. Don't overwhelm with options upfront.
+3. **Warmth over sterility** — Prefer rounded corners, soft shadows, warm tones, and friendly copy. The interface should feel inviting, not clinical.
+4. **Satisfying interactions** — Micro-animations, smooth transitions, and responsive feedback make the app feel alive. Every action should feel good.
+5. **Clarity at scale** — Multi-city trips get complex fast. Use visual hierarchy, color coding, and spatial organization to keep things scannable even with many destinations.

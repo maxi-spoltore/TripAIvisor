@@ -1,9 +1,10 @@
 'use client';
 
-import { MouseEvent, useRef, useState } from 'react';
+import { MouseEvent, useRef, useState, useTransition } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ import {
 export function DeleteTripButton() {
   const tCommon = useTranslations('common');
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement | null>(null);
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -25,8 +27,10 @@ export function DeleteTripButton() {
   };
 
   const handleConfirm = () => {
-    setShowConfirm(false);
-    formRef.current?.requestSubmit();
+    startTransition(() => {
+      setShowConfirm(false);
+      formRef.current?.requestSubmit();
+    });
   };
 
   return (
@@ -40,18 +44,25 @@ export function DeleteTripButton() {
         <Trash2 className="h-4 w-4" />
       </button>
 
-      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+      <Dialog open={showConfirm} onOpenChange={(open) => { if (!isPending) setShowConfirm(open); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{tCommon('delete')}</DialogTitle>
             <DialogDescription>{tCommon('confirmDelete')}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirm(false)}>
+            <Button disabled={isPending} variant="outline" onClick={() => setShowConfirm(false)}>
               {tCommon('cancel')}
             </Button>
-            <Button variant="destructive" onClick={handleConfirm}>
-              {tCommon('delete')}
+            <Button disabled={isPending} variant="destructive" onClick={handleConfirm}>
+              {isPending ? (
+                <>
+                  <Spinner className="mr-2" />
+                  {tCommon('deleting')}
+                </>
+              ) : (
+                tCommon('delete')
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

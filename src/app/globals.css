@@ -159,6 +159,15 @@ h6 {
     animation: scaleIn var(--motion-base) var(--ease-emphasized);
   }
 
+  .animate-content-reveal {
+    animation: contentReveal var(--motion-base) var(--ease-emphasized);
+  }
+
+  .animate-stagger-slide-up {
+    animation: staggerSlideUp var(--motion-slow) var(--ease-emphasized) both;
+    animation-delay: calc(min(var(--stagger-index, 0), 6) * 80ms);
+  }
+
   .text-display-lg {
     font-family: var(--font-space-grotesk), var(--font-manrope), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     font-size: 2.125rem;
@@ -252,6 +261,30 @@ h6 {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes contentReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes staggerSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

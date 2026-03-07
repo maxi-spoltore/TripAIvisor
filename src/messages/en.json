@@ -16,7 +16,8 @@
     "noDateSet": "No date set",
     "confirm": "Confirm",
     "selectDate": "Select a date",
-    "confirmDelete": "Are you sure you want to delete this trip?"
+    "confirmDelete": "Are you sure you want to delete this trip?",
+    "deleting": "Deleting..."
   },
   "auth": {
     "signIn": "Sign in",
