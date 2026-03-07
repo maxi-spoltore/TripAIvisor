@@ -9,6 +9,7 @@ import { TripHeader } from '@/components/trips/trip-header';
 import { ViewTransitionLink } from '@/components/ui/view-transition-link';
 import { auth } from '@/lib/auth';
 import { getTripById } from '@/lib/db/queries/trips';
+import { resolveCityImages } from '@/lib/images/city-image-resolver';
 import { calculateDate } from '@/lib/utils/dates';
 import { exportTrip } from '@/lib/utils/import-export';
 
@@ -63,6 +64,14 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
   const exportedTrip = exportTrip(trip);
   const transitionName = `trip-shell-${trip.trip_id}`;
 
+  const allCityNames = [
+    ...trip.destinations.map((d) => d.city),
+    trip.departure_city,
+    trip.return_city
+  ].filter((c): c is string => Boolean(c));
+  const cityImagesMap = await resolveCityImages(allCityNames);
+  const cityImages = Object.fromEntries(cityImagesMap);
+
   return (
     <main
       className="vt-route-shell mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-6 sm:py-6 md:px-8 md:py-8"
@@ -96,6 +105,7 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
       />
 
       <DestinationList
+        cityImages={cityImages}
         departureCity={trip.departure_city}
         departureTransport={trip.departure_transport}
         destinations={trip.destinations}

@@ -168,6 +168,10 @@ h6 {
     animation-delay: calc(min(var(--stagger-index, 0), 6) * 80ms);
   }
 
+  .animate-slide-from-bottom {
+    animation: slideFromBottom var(--motion-slow) var(--ease-emphasized);
+  }
+
   .text-display-lg {
     font-family: var(--font-space-grotesk), var(--font-manrope), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     font-size: 2.125rem;
@@ -276,6 +280,18 @@ h6 {
   }
 }
 
+@keyframes slideFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes staggerSlideUp {
   from {
     opacity: 0;
@@ -310,6 +326,29 @@ h6 {
     opacity: 0;
     transform: translateY(-4px);
   }
+}
+
+@keyframes navProgressSlide {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(400%);
+  }
+}
+
+.nav-progress-bar {
+  overflow: hidden;
+}
+
+.nav-progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 30%;
+  background: var(--brand-primary);
+  animation: navProgressSlide 1.2s var(--ease-standard) infinite;
 }
 
 @supports (view-transition-name: none) {

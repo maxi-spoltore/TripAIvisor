@@ -115,7 +115,11 @@ const config: Config = {
       }
     }
   },
-  plugins: []
+  plugins: [
+    require('tailwindcss/plugin')(({ addVariant }: { addVariant: (name: string, definition: string) => void }) => {
+      addVariant('touch', '@media (hover: none) and (pointer: coarse)');
+    })
+  ]
 };
 
 export default config;

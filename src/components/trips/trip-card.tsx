@@ -1,10 +1,12 @@
+import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { Calendar, MapPin } from 'lucide-react';
 import { deleteTripForLocaleAction } from '@/app/actions/trips';
 import { DeleteTripButton } from '@/components/trips/delete-trip-button';
+import { TripCardImageCarousel } from '@/components/trips/trip-card-image-carousel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ViewTransitionLink } from '@/components/ui/view-transition-link';
-import type { Trip } from '@/types/database';
+import type { CityImage, Trip } from '@/types/database';
 
 type TripCardProps = {
   locale: string;
@@ -13,6 +15,7 @@ type TripCardProps = {
   selectDateLabel: string;
   destinationCount: number;
   totalDays: number;
+  cityImages: CityImage[];
 };
 
 export async function TripCard({
@@ -21,7 +24,8 @@ export async function TripCard({
   editLabel,
   selectDateLabel,
   destinationCount,
-  totalDays
+  totalDays,
+  cityImages
 }: TripCardProps) {
   const deleteTripAction = deleteTripForLocaleAction.bind(null, locale);
   const tTrips = await getTranslations({ locale, namespace: 'trips' });
@@ -35,7 +39,28 @@ export async function TripCard({
       className="group overflow-hidden border-border bg-surface shadow-card transition-all duration-base ease-standard hover:-translate-y-0.5 hover:border-brand-primary/40 hover:shadow-floating"
       style={{ viewTransitionName: transitionName }}
     >
-      <div className="h-1.5 bg-gradient-to-r from-brand-route via-brand-primary to-brand-accent" />
+      {cityImages.length > 1 ? (
+        <TripCardImageCarousel images={cityImages} />
+      ) : cityImages.length === 1 ? (
+        <div className="relative h-32 sm:h-36 lg:h-44">
+          <Image
+            alt=""
+            className="object-cover [object-position:center_25%] lg:[object-position:center_30%]"
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            src={`${cityImages[0].raw_url}&w=1200&q=80&fit=crop`}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/10" />
+          <p className="absolute bottom-1.5 right-2 text-[10px] text-white/70">
+            Photo by <span className="font-medium">{cityImages[0].photographer_name}</span> / Unsplash
+          </p>
+        </div>
+      ) : (
+        <div className="relative h-32 overflow-hidden sm:h-36 lg:h-44">
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-primary via-brand-route to-brand-accent opacity-90" />
+          <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 30%, white 1px, transparent 1px), radial-gradient(circle at 50% 80%, white 1px, transparent 1px)', backgroundSize: '60px 60px, 80px 80px, 40px 40px' }} />
+        </div>
+      )}
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-4">
           <CardTitle className="text-title-md font-semibold text-foreground-primary sm:text-title-lg">{trip.title}</CardTitle>

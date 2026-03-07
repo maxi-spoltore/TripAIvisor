@@ -51,7 +51,7 @@ export function ActivityCard({
         categoryConfig.borderClassName
       )}
     >
-      <div className="flex flex-wrap items-start gap-3">
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-start sm:gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-2">
           <Icon aria-hidden="true" className={cn('mt-0.5 h-4 w-4 shrink-0', categoryConfig.iconClassName)} />
           <div className="min-w-0">
@@ -78,7 +78,7 @@ export function ActivityCard({
 
           <Button
             aria-label={tCommon('edit')}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 touch:h-10 touch:w-10"
             disabled={isPending}
             onClick={() => onEdit(activity)}
             variant="ghost"
@@ -87,7 +87,7 @@ export function ActivityCard({
           </Button>
           <Button
             aria-label={tCommon('delete')}
-            className="h-8 w-8 p-0 text-danger hover:bg-danger/10 hover:text-danger"
+            className="h-8 w-8 p-0 text-danger hover:bg-danger/10 hover:text-danger touch:h-10 touch:w-10"
             disabled={isPending}
             onClick={() => onDelete(activity.activity_id)}
             variant="ghost"

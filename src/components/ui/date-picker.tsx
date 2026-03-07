@@ -83,7 +83,7 @@ export function DatePicker({ value, onChange, disabled = false, locale, placehol
           <span className="min-w-0 flex-1 truncate">{displayValue ?? placeholder ?? ''}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[min(22rem,calc(100vw-2rem))] p-1">
+      <PopoverContent align="start" collisionPadding={16} className="w-[min(22rem,calc(100vw-2rem))] p-1">
         <Calendar
           defaultMonth={selectedDate}
           initialFocus

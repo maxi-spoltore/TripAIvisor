@@ -236,8 +236,8 @@ export function ReturnCard({
             </div>
 
             <Button disabled={isPending} onClick={() => setIsModalOpen(true)} size="sm" variant="outline">
-              <Edit2 className="mr-1.5 h-4 w-4" />
-              {tTrips('editReturn')}
+              <Edit2 className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">{tTrips('editReturn')}</span>
             </Button>
           </div>
 

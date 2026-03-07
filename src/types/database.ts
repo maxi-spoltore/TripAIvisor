@@ -136,6 +136,14 @@ export interface Activity {
   updated_at: string;
 }
 
+export interface CityImage {
+  city_key: string;
+  raw_url: string;
+  blur_hash: string | null;
+  photographer_name: string;
+  photographer_url: string;
+}
+
 export interface TripShare {
   share_id: number;
   trip_id: number;

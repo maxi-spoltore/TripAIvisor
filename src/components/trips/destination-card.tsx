@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import {
   CalendarDays,
@@ -16,7 +17,7 @@ import {
 import { formatDate, getDestinationDates } from '@/lib/utils/dates';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import type { Accommodation, DestinationWithRelations, Transport, TransportType } from '@/types/database';
+import type { Accommodation, CityImage, DestinationWithRelations, Transport, TransportType } from '@/types/database';
 
 type DestinationCardProps = {
   destination: DestinationWithRelations;
@@ -28,6 +29,7 @@ type DestinationCardProps = {
   activityCount: number;
   expanded: boolean;
   isMenuOpen: boolean;
+  cityImage?: CityImage | null;
   onToggle: (destinationId: number) => void;
   onOpenSchedule: (destinationId: number) => void;
   onEdit: (destinationId: number) => void;
@@ -191,6 +193,7 @@ export const DestinationCard = memo(function DestinationCard({
   activityCount,
   expanded,
   isMenuOpen,
+  cityImage,
   onToggle,
   onOpenSchedule,
   onEdit,
@@ -232,10 +235,30 @@ export const DestinationCard = memo(function DestinationCard({
   return (
     <div
       className={cn(
-        'rounded-xl border shadow-card transition-all duration-base ease-standard hover:shadow-floating',
+        'overflow-hidden rounded-xl border shadow-card transition-all duration-base ease-standard hover:shadow-floating',
         destination.is_stopover ? 'border-border-strong bg-elevated' : 'border-border bg-surface'
       )}
     >
+      {cityImage ? (
+        <div className="relative h-20 sm:h-24 lg:h-32">
+          <Image
+            alt=""
+            className="object-cover [object-position:center_50%] lg:[object-position:center_40%]"
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            src={`${cityImage.raw_url}&w=800&q=80&fit=crop`}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-black/5" />
+          <p className="absolute bottom-1 right-1.5 text-[9px] text-white/60">
+            <span className="font-medium">{cityImage.photographer_name}</span> / Unsplash
+          </p>
+        </div>
+      ) : (
+        <div className="relative h-20 overflow-hidden sm:h-24 lg:h-32">
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-primary via-brand-route to-brand-accent opacity-90" />
+          <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 30%, white 1px, transparent 1px), radial-gradient(circle at 50% 80%, white 1px, transparent 1px)', backgroundSize: '60px 60px, 80px 80px, 40px 40px' }} />
+        </div>
+      )}
       <div className="space-y-4 p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3 sm:gap-4">
           <div className="min-w-0 flex-1 space-y-2">
@@ -274,7 +297,7 @@ export const DestinationCard = memo(function DestinationCard({
             {canOpenSchedule ? (
               <button
                 aria-label={`${tActivities('schedule')} (${tActivities('activitiesCount', { count: activityCount })})`}
-                className="inline-flex items-center gap-1 rounded-md p-2 text-foreground-muted transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+                className="inline-flex items-center gap-1 rounded-md p-2 text-foreground-muted transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas touch:p-3"
                 onClick={(event) => {
                   event.stopPropagation();
                   onOpenSchedule(cardId);
@@ -296,7 +319,7 @@ export const DestinationCard = memo(function DestinationCard({
                 aria-controls={isMenuOpen ? menuId : undefined}
                 aria-expanded={isMenuOpen}
                 aria-haspopup="menu"
-                className="rounded-md p-2 text-foreground-muted transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+                className="rounded-md p-2 text-foreground-muted transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas touch:p-3"
                 onClick={(event) => {
                   event.stopPropagation();
                   setOpenMenuId(isMenuOpen ? null : cardId);

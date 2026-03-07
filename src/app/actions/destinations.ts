@@ -18,6 +18,7 @@ import {
   getAccommodationByDestination,
   upsertAccommodation
 } from '@/lib/db/queries/accommodations';
+import { getActivitiesByDestination } from '@/lib/db/queries/activities';
 import type { Destination, DestinationWithRelations, TransportType } from '@/types/database';
 
 type SessionUser = {
@@ -263,6 +264,6 @@ export async function saveDestinationDetailsAction(
     ...updatedDestination,
     transport: updatedTransport,
     accommodation: updatedAccommodation,
-    activities: []
+    activities: await getActivitiesByDestination(destinationId)
   };
 }

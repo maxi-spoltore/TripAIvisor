@@ -17,7 +17,9 @@
     "confirm": "Confirmar",
     "selectDate": "Selecciona una fecha",
     "confirmDelete": "¿Estás seguro de que deseas eliminar este viaje?",
-    "deleting": "Eliminando..."
+    "deleting": "Eliminando...",
+    "moveUp": "Mover arriba",
+    "moveDown": "Mover abajo"
   },
   "auth": {
     "signIn": "Iniciar sesión",
@@ -185,7 +187,9 @@
     "bookingCode": "Codigo de reserva",
     "bookingLink": "Link de reserva",
     "location": "Ubicacion",
-    "description": "Descripcion"
+    "description": "Descripcion",
+    "scheduleFor": "Horario para {destination}",
+    "selectDay": "Seleccionar dia"
   },
   "share": {
     "title": "Compartir Viaje",

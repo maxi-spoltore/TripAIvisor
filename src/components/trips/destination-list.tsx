@@ -1,7 +1,7 @@
 'use client';
 
 import { DragEvent, FormEvent, Fragment, useCallback, useEffect, useReducer, useState, useTransition } from 'react';
-import { ArrowRightLeft, PlaneLanding, PlaneTakeoff, Plus } from 'lucide-react';
+import { ArrowRightLeft, ChevronDown, ChevronUp, PlaneLanding, PlaneTakeoff, Plus } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import {
@@ -23,17 +23,22 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { getDestinationDates } from '@/lib/utils/dates';
 import { cn } from '@/lib/utils';
-import type { Destination, DestinationWithRelations, TransportWithLegs } from '@/types/database';
+import type { CityImage, Destination, DestinationWithRelations, TransportWithLegs } from '@/types/database';
 import { DepartureCard } from './departure-card';
 import { DestinationCard } from './destination-card';
 import type { DestinationModalSubmitInput } from './destination-modal';
 import { ReturnCard } from './return-card';
+
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 const DestinationModal = dynamic(() =>
   import('./destination-modal').then((mod) => mod.DestinationModal)
 );
 const DayPlanner = dynamic(() =>
   import('./day-planner').then((mod) => mod.DayPlanner)
+);
+const DayPlannerSheet = dynamic(() =>
+  import('./day-planner-sheet').then((mod) => mod.DayPlannerSheet)
 );
 
 type DestinationListProps = {
@@ -47,6 +52,7 @@ type DestinationListProps = {
   returnCity?: string;
   returnDate?: string | null;
   returnTransport?: TransportWithLegs | null;
+  cityImages?: Record<string, CityImage>;
 };
 
 function sortByPosition(destinations: DestinationWithRelations[]): DestinationWithRelations[] {
@@ -239,7 +245,8 @@ export function DestinationList({
   travelDays,
   returnCity,
   returnDate,
-  returnTransport
+  returnTransport,
+  cityImages
 }: DestinationListProps) {
   const tCommon = useTranslations('common');
   const tDestinations = useTranslations('destinations');
@@ -255,6 +262,7 @@ export function DestinationList({
     draggedIndex,
     errorMessage
   } = state;
+  const isDesktop = useMediaQuery('(min-width: 768px)');
   const [insertAtPosition, setInsertAtPosition] = useState<number | null>(null);
   const [newCity, setNewCity] = useState('');
   const [newDuration, setNewDuration] = useState('2');
@@ -326,6 +334,39 @@ export function DestinationList({
       }
     });
   };
+
+  const handleReorder = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (fromIndex === toIndex || toIndex < 0 || toIndex >= items.length) {
+        return;
+      }
+
+      const previousItems = items;
+      dispatch({ type: 'REORDER', fromIndex, toIndex });
+      setInsertAtPosition(null);
+
+      startTransition(async () => {
+        try {
+          const reordered = [...previousItems];
+          const [draggedItem] = reordered.splice(fromIndex, 1);
+          reordered.splice(toIndex, 0, draggedItem);
+          const normalizedItems = withNormalizedPositions(reordered);
+          await reorderDestinationsAction({
+            locale,
+            tripId,
+            orderedIds: normalizedItems.map((destination) => destination.destination_id)
+          });
+        } catch {
+          dispatch({ type: 'ROLLBACK_ITEMS', items: previousItems });
+          dispatch({
+            type: 'SET_ERROR',
+            message: tErrors('reorderDestinations')
+          });
+        }
+      });
+    },
+    [items, locale, tripId, startTransition, tErrors]
+  );
 
   const handleAddDestination = (event: FormEvent<HTMLFormElement>, atPosition?: number) => {
     event.preventDefault();
@@ -459,6 +500,12 @@ export function DestinationList({
   const editingDestination =
     editingDestinationId === null ? null : items.find((item) => item.destination_id === editingDestinationId) ?? null;
 
+  const scheduleDestination =
+    scheduleOpenId === null ? null : items.find((item) => item.destination_id === scheduleOpenId) ?? null;
+  const scheduleDestinationIndex = scheduleDestination
+    ? items.indexOf(scheduleDestination)
+    : -1;
+
   const addDestinationForm = (showTimelineNode: boolean, atPosition?: number) => (
     <form className="relative flex gap-3 sm:gap-4" onSubmit={(event) => handleAddDestination(event, atPosition)}>
       {showTimelineNode ? (
@@ -497,7 +544,7 @@ export function DestinationList({
           </label>
         </div>
 
-        <div className={cn('grid gap-3', !isStopover && 'sm:grid-cols-2')}>
+        <div className={cn('grid gap-3', isStopover ? 'sm:grid-cols-[1fr_auto]' : 'sm:grid-cols-[1fr_1fr_auto]')}>
           <div className="space-y-1">
             <label className="text-label-md text-foreground-secondary">{tDestinations('city')}</label>
             <Input
@@ -521,10 +568,23 @@ export function DestinationList({
               />
             </div>
           ) : null}
+
+          <div className="hidden self-end sm:block">
+            <Button className="w-full sm:w-auto" disabled={isPending} type="submit">
+              {isPending ? (
+                <>
+                  <Spinner className="mr-2" />
+                  {tCommon('adding')}
+                </>
+              ) : (
+                tCommon('add')
+              )}
+            </Button>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <Button className="sm:w-auto" disabled={isPending} type="submit">
+        <div className="flex flex-col gap-2 sm:hidden">
+          <Button disabled={isPending} type="submit">
             {isPending ? (
               <>
                 <Spinner className="mr-2" />
@@ -534,9 +594,12 @@ export function DestinationList({
               tCommon('add')
             )}
           </Button>
-          {typeof atPosition === 'number' ? (
+        </div>
+
+        {typeof atPosition === 'number' ? (
+          <div className="flex justify-end">
             <Button
-              className="sm:w-auto"
+              className="w-full sm:w-auto"
               disabled={isPending}
               onClick={() => {
                 setInsertAtPosition(null);
@@ -548,8 +611,8 @@ export function DestinationList({
             >
               {tCommon('cancel')}
             </Button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
     </form>
   );
@@ -596,7 +659,7 @@ export function DestinationList({
               ) : (
                 <div className="group/insert relative flex h-7 items-center">
                   <button
-                    className="relative z-10 ml-[0.65rem] flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-border-strong bg-canvas text-foreground-muted opacity-0 transition-all duration-fast ease-standard group-hover/insert:opacity-100 hover:border-brand-primary hover:text-brand-primary focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas sm:ml-2"
+                    className="relative z-10 ml-[0.65rem] flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-border-strong bg-canvas text-foreground-muted opacity-0 transition-all duration-fast ease-standard group-hover/insert:opacity-100 hover:border-brand-primary hover:text-brand-primary focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas sm:ml-2 touch:h-10 touch:w-10 touch:opacity-60"
                     disabled={isPending}
                     onClick={() => {
                       setInsertAtPosition(index);
@@ -606,9 +669,9 @@ export function DestinationList({
                     title={tDestinations('insertHere')}
                     type="button"
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus className="h-3 w-3 touch:h-4 touch:w-4" />
                   </button>
-                  <span className="pointer-events-none absolute left-10 top-1/2 z-20 -translate-y-1/2 rounded-md bg-foreground-primary px-2 py-1 text-label-sm text-canvas opacity-0 transition-opacity duration-fast ease-standard group-hover/insert:opacity-100 group-focus-within/insert:opacity-100">
+                  <span className="pointer-events-none absolute left-10 top-1/2 z-20 -translate-y-1/2 rounded-md bg-foreground-primary px-2 py-1 text-label-sm text-canvas opacity-0 transition-opacity duration-fast ease-standard group-hover/insert:opacity-100 group-focus-within/insert:opacity-100 touch:hidden">
                     {tDestinations('insertHere')}
                   </span>
                 </div>
@@ -632,7 +695,8 @@ export function DestinationList({
                 )}
                 <div className="flex-1 space-y-3">
                   <DestinationCard
-                    activityCount={destination.activities.length}
+                    activityCount={destination.activities.filter(a => a.day_number <= destination.duration).length}
+                    cityImage={cityImages?.[destination.city.trim().toLowerCase()] ?? null}
                     destination={destination}
                     destinations={items}
                     expanded={Boolean(expandedCards[destination.destination_id])}
@@ -647,9 +711,29 @@ export function DestinationList({
                     startDate={startDate}
                     travelDays={travelDays ?? 0}
                   />
-                  {scheduleOpenId === destination.destination_id ? (
+                  <div className="hidden touch:flex items-center gap-2">
+                    <Button
+                      aria-label={tCommon('moveUp')}
+                      className="h-10 w-10 p-0"
+                      disabled={isPending || index === 0}
+                      onClick={() => handleReorder(index, index - 1)}
+                      variant="outline"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      aria-label={tCommon('moveDown')}
+                      className="h-10 w-10 p-0"
+                      disabled={isPending || index === items.length - 1}
+                      onClick={() => handleReorder(index, index + 1)}
+                      variant="outline"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {isDesktop && scheduleOpenId === destination.destination_id ? (
                     <DayPlanner
-                      activities={destination.activities}
+                      activities={destination.activities.filter(a => a.day_number <= destination.duration)}
                       destinationId={destination.destination_id}
                       duration={destination.duration}
                       locale={locale}
@@ -724,6 +808,19 @@ export function DestinationList({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {!isDesktop && scheduleDestination && scheduleDestinationIndex >= 0 ? (
+        <DayPlannerSheet
+          activities={scheduleDestination.activities.filter(a => a.day_number <= scheduleDestination.duration)}
+          destinationId={scheduleDestination.destination_id}
+          destinationName={scheduleDestination.city}
+          duration={scheduleDestination.duration}
+          locale={locale}
+          onClose={() => dispatch({ type: 'CLOSE_SCHEDULE' })}
+          startDate={getDestinationDates(startDate, items, scheduleDestinationIndex, travelDays ?? 0).start}
+          tripId={tripId}
+        />
+      ) : null}
     </section>
   );
 }

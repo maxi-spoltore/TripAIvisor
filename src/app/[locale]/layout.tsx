@@ -4,6 +4,7 @@ import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 import { Header } from '@/components/layout/header';
+import { NavigationProgress } from '@/components/layout/navigation-progress';
 import { routing } from '@/i18n/routing';
 import { auth } from '@/lib/auth';
 
@@ -38,6 +39,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     <NextIntlClientProvider locale={locale} messages={messages}>
       <div data-locale={locale} className="min-h-screen">
         <Header locale={locale} userName={session?.user?.name} userImage={session?.user?.image} />
+        <NavigationProgress />
         {children}
       </div>
     </NextIntlClientProvider>

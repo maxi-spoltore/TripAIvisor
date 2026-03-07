@@ -7,6 +7,7 @@ import { ImportTripButton } from '@/components/trips/import-trip-button';
 import { TripCard } from '@/components/trips/trip-card';
 import { auth } from '@/lib/auth';
 import { getTripDestinationStats, getUserTrips } from '@/lib/db/queries/trips';
+import { resolveCityImages } from '@/lib/images/city-image-resolver';
 
 type TripsListPageProps = {
   params: {
@@ -45,6 +46,9 @@ export default async function TripsListPage({ params }: TripsListPageProps) {
   const trips = await getUserTrips(userId);
   const tripStats = await getTripDestinationStats(trips.map((trip) => trip.trip_id));
 
+  const allCities = Object.values(tripStats).flatMap((s) => s.cities);
+  const cityImageMap = await resolveCityImages(allCities);
+
   return (
     <main className="vt-route-shell mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-5 sm:gap-8 sm:px-6 sm:py-6 md:px-8 md:py-8">
       <div className="flex flex-col gap-4 sm:gap-5 md:flex-row md:items-start md:justify-between">
@@ -72,7 +76,10 @@ export default async function TripsListPage({ params }: TripsListPageProps) {
       ) : (
         <div className="grid gap-4 sm:gap-5 lg:grid-cols-2">
           {trips.map((trip, index) => {
-            const stats = tripStats[trip.trip_id] ?? { destinationCount: 0, totalDays: 0 };
+            const stats = tripStats[trip.trip_id] ?? { destinationCount: 0, totalDays: 0, firstCity: null, cities: [] };
+            const tripCityImages = stats.cities
+              .map((city) => cityImageMap.get(city.trim().toLowerCase()))
+              .filter((img): img is NonNullable<typeof img> => img !== undefined);
 
             return (
               <div
@@ -81,6 +88,7 @@ export default async function TripsListPage({ params }: TripsListPageProps) {
                 style={{ '--stagger-index': index } as React.CSSProperties}
               >
                 <TripCard
+                  cityImages={tripCityImages}
                   destinationCount={stats.destinationCount}
                   editLabel={tCommon('edit')}
                   locale={locale}

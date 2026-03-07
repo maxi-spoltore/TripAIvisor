@@ -35,6 +35,8 @@ export async function getUserTrips(userId: number): Promise<Trip[]> {
 type TripDestinationStats = {
   destinationCount: number;
   totalDays: number;
+  firstCity: string | null;
+  cities: string[];
 };
 
 export async function getTripDestinationStats(tripIds: number[]): Promise<Record<number, TripDestinationStats>> {
@@ -45,25 +47,32 @@ export async function getTripDestinationStats(tripIds: number[]): Promise<Record
   }
 
   for (const tripId of tripIds) {
-    stats[tripId] = { destinationCount: 0, totalDays: 0 };
+    stats[tripId] = { destinationCount: 0, totalDays: 0, firstCity: null, cities: [] };
   }
 
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('destinations')
-    .select('trip_id, duration')
-    .in('trip_id', tripIds);
+    .select('trip_id, duration, city, position')
+    .in('trip_id', tripIds)
+    .order('position', { ascending: true });
 
   if (error) {
     throw error;
   }
 
-  const destinations = (data ?? []) as Pick<Destination, 'trip_id' | 'duration'>[];
+  const destinations = (data ?? []) as Pick<Destination, 'trip_id' | 'duration' | 'city' | 'position'>[];
 
   for (const destination of destinations) {
-    const tripStats = stats[destination.trip_id] ?? { destinationCount: 0, totalDays: 0 };
+    const tripStats = stats[destination.trip_id] ?? { destinationCount: 0, totalDays: 0, firstCity: null, cities: [] };
     tripStats.destinationCount += 1;
     tripStats.totalDays += destination.duration || 0;
+    if (destination.city) {
+      if (tripStats.firstCity === null) {
+        tripStats.firstCity = destination.city;
+      }
+      tripStats.cities.push(destination.city);
+    }
     stats[destination.trip_id] = tripStats;
   }
 

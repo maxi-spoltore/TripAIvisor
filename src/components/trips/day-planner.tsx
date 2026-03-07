@@ -28,6 +28,7 @@ type DayPlannerProps = {
   duration: number;
   activities: Activity[];
   startDate: string | null;
+  variant?: 'inline' | 'sheet';
 };
 
 function getNextPosition(activities: Activity[], dayNumber: number): number {
@@ -107,7 +108,8 @@ export function DayPlanner({
   locale,
   duration,
   activities,
-  startDate
+  startDate,
+  variant = 'inline'
 }: DayPlannerProps) {
   const tActivities = useTranslations('activities');
   const tCommon = useTranslations('common');
@@ -389,122 +391,164 @@ export function DayPlanner({
     return null;
   }
 
+  const isSheet = variant === 'sheet';
+
+  const daySelector = isSheet ? (
+    <Select onValueChange={setSelectedDay} value={selectedDay}>
+      <SelectTrigger>
+        <SelectValue placeholder={tActivities('selectDay')} />
+      </SelectTrigger>
+      <SelectContent>
+        {dayNumbers.map((dayNumber) => {
+          const dayDate = startDate ? calculateDate(startDate, dayNumber - 1) : null;
+          const formattedDate = dayDate ? formatDate(dayDate, localeTag) : null;
+          const count = activityCounts.get(dayNumber) ?? 0;
+
+          return (
+            <SelectItem key={dayNumber} value={String(dayNumber)}>
+              {tActivities('day', { number: dayNumber })} - {formattedDate ?? tCommon('noDateSet')} ({tActivities('activitiesCount', { count })})
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
+  ) : (
+    <div className="relative">
+      <TabsList className="flex h-auto w-full gap-2 overflow-x-auto snap-x snap-mandatory bg-transparent p-0 pb-2 md:grid md:grid-cols-4 lg:grid-cols-6">
+        {dayNumbers.map((dayNumber) => {
+          const dayDate = startDate ? calculateDate(startDate, dayNumber - 1) : null;
+          const formattedDate = dayDate ? formatDate(dayDate, localeTag) : null;
+
+          return (
+            <TabsTrigger
+              className="h-auto min-h-16 flex-col items-start gap-1 rounded-lg border border-border bg-surface px-3 py-2 text-left data-[state=active]:border-brand-primary data-[state=active]:bg-brand-accent-soft snap-start shrink-0 w-36 md:w-auto"
+              key={dayNumber}
+              value={String(dayNumber)}
+            >
+              <span className="text-body-sm font-semibold text-foreground-primary">
+                {tActivities('day', { number: dayNumber })}
+              </span>
+              <div className="flex w-full items-center gap-2 text-label-sm text-foreground-secondary">
+                <span>{formattedDate ?? tCommon('noDateSet')}</span>
+                <Badge className="ml-auto" variant="outline">
+                  {activityCounts.get(dayNumber) ?? 0}
+                </Badge>
+              </div>
+            </TabsTrigger>
+          );
+        })}
+      </TabsList>
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-elevated to-transparent md:hidden" />
+    </div>
+  );
+
+  const activitiesContent = (
+    <>
+      {selectedDayActivities.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-border-strong bg-surface p-4 text-body-sm text-foreground-secondary">
+          {tActivities('noActivities')}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {selectedDayActivities.map((activity) => (
+            <ActivityCard
+              activity={activity}
+              hasConflict={conflictIds.has(activity.activity_id)}
+              isPending={isPending}
+              key={activity.activity_id}
+              onDelete={handleDeleteActivity}
+              onEdit={handleEditActivity}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="rounded-lg border border-border bg-surface p-3">
+        <p className="mb-2 text-body-sm font-semibold text-foreground-primary">{tActivities('quickAdd')}</p>
+        <form className={isSheet ? 'flex flex-col gap-2' : 'grid gap-2 sm:grid-cols-[minmax(0,1fr)_11rem_9rem_auto]'} onSubmit={handleQuickAdd}>
+          <Input
+            disabled={isPending}
+            onChange={(event) => setQuickAddName(event.target.value)}
+            placeholder={tActivities('namePlaceholder')}
+            value={quickAddName}
+          />
+
+          <div className={isSheet ? 'grid grid-cols-2 gap-2' : 'grid grid-cols-2 gap-2 sm:contents'}>
+            <Select
+              disabled={isPending}
+              onValueChange={(value) => setQuickAddCategory(value as ActivityCategory)}
+              value={quickAddCategory}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ACTIVITY_CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {tActivities(category)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Input
+              disabled={isPending}
+              onChange={(event) => setQuickAddStartTime(event.target.value)}
+              type="time"
+              value={quickAddStartTime}
+            />
+          </div>
+
+          <Button className={isSheet ? 'w-full' : ''} disabled={isPending} type="submit">
+            {isPending ? (
+              <>
+                <Spinner className="mr-2" />
+                {tCommon('saving')}
+              </>
+            ) : (
+              tCommon('add')
+            )}
+          </Button>
+        </form>
+      </div>
+
+      <div className="space-y-2 rounded-lg border border-dashed border-border-strong bg-surface p-3">
+        <Button
+          className="w-full sm:w-auto"
+          disabled={isPending}
+          onClick={() => setShowCategoryPicker((previous) => !previous)}
+          variant="outline"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          {tActivities('addActivity')}
+        </Button>
+
+        {showCategoryPicker ? (
+          <ActivityCategoryPicker disabled={isPending} onSelect={handleSelectCategory} />
+        ) : null}
+      </div>
+    </>
+  );
+
   return (
-    <section className="space-y-4 rounded-xl border border-border bg-elevated p-4">
+    <section className={isSheet ? 'space-y-4' : 'space-y-4 rounded-xl border border-border bg-elevated p-4'}>
       {errorMessage ? (
         <p className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-body-sm text-danger">{errorMessage}</p>
       ) : null}
 
-      <Tabs onValueChange={setSelectedDay} value={selectedDay}>
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 md:grid-cols-4 lg:grid-cols-6">
-          {dayNumbers.map((dayNumber) => {
-            const dayDate = startDate ? calculateDate(startDate, dayNumber - 1) : null;
-            const formattedDate = dayDate ? formatDate(dayDate, localeTag) : null;
-
-            return (
-              <TabsTrigger
-                className="h-auto min-h-16 flex-col items-start gap-1 rounded-lg border border-border bg-surface px-3 py-2 text-left data-[state=active]:border-brand-primary data-[state=active]:bg-brand-accent-soft"
-                key={dayNumber}
-                value={String(dayNumber)}
-              >
-                <span className="text-body-sm font-semibold text-foreground-primary">
-                  {tActivities('day', { number: dayNumber })}
-                </span>
-                <div className="flex w-full items-center gap-2 text-label-sm text-foreground-secondary">
-                  <span>{formattedDate ?? tCommon('noDateSet')}</span>
-                  <Badge className="ml-auto" variant="outline">
-                    {activityCounts.get(dayNumber) ?? 0}
-                  </Badge>
-                </div>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-
-        <TabsContent className="mt-4 space-y-3" value={selectedDay}>
-          {selectedDayActivities.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-border-strong bg-surface p-4 text-body-sm text-foreground-secondary">
-              {tActivities('noActivities')}
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {selectedDayActivities.map((activity) => (
-                <ActivityCard
-                  activity={activity}
-                  hasConflict={conflictIds.has(activity.activity_id)}
-                  isPending={isPending}
-                  key={activity.activity_id}
-                  onDelete={handleDeleteActivity}
-                  onEdit={handleEditActivity}
-                />
-              ))}
-            </div>
-          )}
-
-          <div className="rounded-lg border border-border bg-surface p-3">
-            <p className="mb-2 text-body-sm font-semibold text-foreground-primary">{tActivities('quickAdd')}</p>
-            <form className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_11rem_9rem_auto]" onSubmit={handleQuickAdd}>
-              <Input
-                disabled={isPending}
-                onChange={(event) => setQuickAddName(event.target.value)}
-                placeholder={tActivities('namePlaceholder')}
-                value={quickAddName}
-              />
-
-              <Select
-                disabled={isPending}
-                onValueChange={(value) => setQuickAddCategory(value as ActivityCategory)}
-                value={quickAddCategory}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACTIVITY_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {tActivities(category)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Input
-                disabled={isPending}
-                onChange={(event) => setQuickAddStartTime(event.target.value)}
-                type="time"
-                value={quickAddStartTime}
-              />
-
-              <Button disabled={isPending} type="submit">
-                {isPending ? (
-                  <>
-                    <Spinner className="mr-2" />
-                    {tCommon('saving')}
-                  </>
-                ) : (
-                  tCommon('add')
-                )}
-              </Button>
-            </form>
-          </div>
-
-          <div className="space-y-2 rounded-lg border border-dashed border-border-strong bg-surface p-3">
-            <Button
-              className="w-full sm:w-auto"
-              disabled={isPending}
-              onClick={() => setShowCategoryPicker((previous) => !previous)}
-              variant="outline"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {tActivities('addActivity')}
-            </Button>
-
-            {showCategoryPicker ? (
-              <ActivityCategoryPicker disabled={isPending} onSelect={handleSelectCategory} />
-            ) : null}
-          </div>
-        </TabsContent>
-      </Tabs>
+      {isSheet ? (
+        <>
+          {daySelector}
+          <div className="space-y-3">{activitiesContent}</div>
+        </>
+      ) : (
+        <Tabs onValueChange={setSelectedDay} value={selectedDay}>
+          {daySelector}
+          <TabsContent className="mt-4 space-y-3" value={selectedDay}>
+            {activitiesContent}
+          </TabsContent>
+        </Tabs>
+      )}
 
       <ActivityModal
         activity={editingActivity}

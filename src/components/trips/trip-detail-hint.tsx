@@ -36,7 +36,7 @@ export function TripDetailHint() {
         </ol>
         <button
           aria-label={t('gotIt')}
-          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-foreground-secondary transition-colors hover:text-foreground-primary"
+          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-foreground-secondary transition-colors hover:text-foreground-primary touch:h-10 touch:w-10"
           onClick={dismiss}
           type="button"
         >
