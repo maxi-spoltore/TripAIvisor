@@ -199,6 +199,36 @@ When `trips.length > 0`, keep the existing stats grid and "Go to my trips" link 
 - [ ] Returning user (1+ trips) sees existing stats cards and "Go to my trips" button — unchanged.
 - [ ] Both `en` and `es` locales render correct translations.
 
+### Task 2 Implementation Summary (Completed March 6, 2026)
+
+Task 2 has been implemented in `src/app/[locale]/page.tsx` with a server-side conditional render based on `trips.length`.
+
+Implemented changes:
+
+- Added onboarding translations in the dashboard server component:
+  - `const tOnboarding = await getTranslations({ locale, namespace: 'onboarding' });`
+- Added `lucide-react` icons used by the onboarding welcome card:
+  - `MapPin`, `Calendar`, `Share2`
+- Replaced the previous always-on stats block with a conditional branch:
+  - `trips.length === 0`: renders a welcome card with:
+    - top gradient bar (`from-brand-route via-brand-primary to-brand-accent`)
+    - onboarding title (`onboarding.welcomeTitle`)
+    - onboarding description (`onboarding.welcomeDescription`)
+    - three feature bullets (`featureDestinations`, `featureDates`, `featureShare`) with icons
+    - primary CTA linking directly to `/${locale}/trips/new` with label `onboarding.createFirstTrip`
+  - `trips.length > 0`: preserves existing behavior:
+    - stats cards for total trips and total destinations
+    - existing CTA linking to `/${locale}/trips` with label `trips.goToTrips`
+- No client state/hooks were added; logic remains fully server-rendered as required.
+- Existing returning-user stats copy and card structure were kept unchanged.
+
+Validation performed:
+
+- Initial `npm run build` failed in this worktree because dependencies were missing (`sh: next: command not found`).
+- Installed dependencies via `npm install`.
+- Re-ran `npm run build` successfully after installation (exit code 0).
+- Build emitted non-blocking Next.js/Webpack cache warnings from `next-intl` dynamic import analysis and a Node experimental warning; no compile/type errors occurred.
+
 ---
 
 ## Task 3: New Trip Form — Guidance Text
