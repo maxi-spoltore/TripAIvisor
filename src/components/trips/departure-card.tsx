@@ -59,31 +59,11 @@ function hasTransportContent(transport: Transport | null): boolean {
   );
 }
 
-function getTransportLabel(locale: string, transportType: TransportType): string {
-  if (locale === 'es') {
-    if (transportType === 'train') {
-      return 'Tren';
-    }
-
-    if (transportType === 'bus') {
-      return 'Bus';
-    }
-
-    return 'Avion';
-  }
-
-  if (transportType === 'train') {
-    return 'Train';
-  }
-
-  if (transportType === 'bus') {
-    return 'Bus';
-  }
-
-  return 'Plane';
+function getTransportLabel(transportType: TransportType, tTransport: (key: string) => string): string {
+  return tTransport(transportType);
 }
 
-function getTransportDetails(transport: Transport | null, locale: string): LabelValue[] {
+function getTransportDetails(transport: Transport | null, tTransport: (key: string) => string): LabelValue[] {
   if (!transport || !hasTransportContent(transport)) {
     return [];
   }
@@ -92,28 +72,28 @@ function getTransportDetails(transport: Transport | null, locale: string): Label
 
   if (transport.transport_type && transport.transport_type !== 'plane') {
     details.push({
-      label: locale === 'es' ? 'Tipo' : 'Type',
-      value: getTransportLabel(locale, transport.transport_type)
+      label: tTransport('type'),
+      value: getTransportLabel(transport.transport_type, tTransport)
     });
   }
 
   if (transport.leave_accommodation_time) {
     details.push({
-      label: locale === 'es' ? 'Salida alojamiento' : 'Leave accommodation',
+      label: tTransport('leaveTime'),
       value: transport.leave_accommodation_time
     });
   }
 
   if (transport.terminal) {
     details.push({
-      label: locale === 'es' ? 'Terminal' : 'Terminal',
+      label: tTransport('terminal'),
       value: transport.terminal
     });
   }
 
   if (transport.company) {
     details.push({
-      label: locale === 'es' ? 'Empresa' : 'Company',
+      label: tTransport('company'),
       value: transport.company
     });
   }
@@ -121,21 +101,21 @@ function getTransportDetails(transport: Transport | null, locale: string): Label
   const reservation = [transport.booking_number, transport.booking_code].filter(Boolean).join(' / ');
   if (reservation) {
     details.push({
-      label: locale === 'es' ? 'Reserva' : 'Reservation',
+      label: tTransport('reservation'),
       value: reservation
     });
   }
 
   if (transport.departure_time) {
     details.push({
-      label: locale === 'es' ? 'Hora salida' : 'Departure time',
+      label: tTransport('departureTime'),
       value: transport.departure_time
     });
   }
 
   if (transport.arrival_time) {
     details.push({
-      label: locale === 'es' ? 'Hora llegada' : 'Arrival time',
+      label: tTransport('arrivalTime'),
       value: transport.arrival_time
     });
   }
@@ -170,6 +150,8 @@ export function DepartureCard({
   departureTransport,
   nextDestinationCity
 }: DepartureCardProps) {
+  const tCommon = useTranslations('common');
+  const tErrors = useTranslations('errors');
   const tTrips = useTranslations('trips');
   const tTransport = useTranslations('transport');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -192,7 +174,7 @@ export function DepartureCard({
   const hasTransport = hasLegsItinerary || hasTransportContent(localDepartureTransport);
   const travelDays = localDepartureTransport?.travel_days ?? 0;
   const TransportIcon = getTransportIconByType(localDepartureTransport?.transport_type);
-  const transportDetails = getTransportDetails(localDepartureTransport, locale);
+  const transportDetails = getTransportDetails(localDepartureTransport, tTransport);
   const totalJourneyMinutes = hasLegsItinerary ? computeTotalJourneyMinutes(sortedLegs) : null;
 
   const handleSave = (payload: DepartureTransportSubmitInput, legForms: LegFormState[]) => {
@@ -236,11 +218,7 @@ export function DepartureCard({
         setIsLegsCollapsed(savedLegs.length >= 3);
         setIsModalOpen(false);
       } catch {
-        setErrorMessage(
-          locale === 'es'
-            ? 'No se pudieron guardar los detalles de transporte de salida.'
-            : 'Could not save departure transport details.'
-        );
+        setErrorMessage(tErrors('saveDepartureTransport'));
       }
     });
   };
@@ -255,7 +233,7 @@ export function DepartureCard({
               {formattedStartDate ? (
                 <p className="mt-2 text-sm text-foreground-secondary">{formattedStartDate}</p>
               ) : (
-                <p className="mt-2 text-sm text-foreground-muted">{locale === 'es' ? 'Sin fecha definida' : 'No date set'}</p>
+                <p className="mt-2 text-sm text-foreground-muted">{tCommon('noDateSet')}</p>
               )}
             </div>
 
@@ -284,7 +262,7 @@ export function DepartureCard({
                         type="button"
                         variant="ghost"
                       >
-                        {isLegsCollapsed ? (locale === 'es' ? 'Expandir' : 'Expand') : locale === 'es' ? 'Colapsar' : 'Collapse'}
+                        {isLegsCollapsed ? tCommon('expand') : tCommon('collapse')}
                         {isLegsCollapsed ? (
                           <ChevronDown className="ml-1 h-4 w-4" />
                         ) : (
@@ -302,16 +280,14 @@ export function DepartureCard({
                         const companyLine = [leg.company, reservation].filter(Boolean).join(' ');
                         const detailLine = [
                           companyLine || null,
-                          leg.terminal ? `${locale === 'es' ? 'Terminal' : 'Terminal'} ${leg.terminal}` : null
+                          leg.terminal ? `${tTransport('terminal')} ${leg.terminal}` : null
                         ]
                           .filter(Boolean)
                           .join(' | ');
                         const timeLine = [
-                          leg.departure_time
-                            ? `${locale === 'es' ? 'Sale' : 'Departs'} ${leg.departure_time}`
-                            : null,
+                          leg.departure_time ? `${tTransport('departs')} ${leg.departure_time}` : null,
                           leg.arrival_time
-                            ? `${locale === 'es' ? 'Llega' : 'Arrives'} ${leg.arrival_time}${
+                            ? `${tTransport('arrives')} ${leg.arrival_time}${
                                 leg.day_offset > 0 ? ` (${tTransport('dayOffset', { n: leg.day_offset })})` : ''
                               }`
                             : null
@@ -397,7 +373,6 @@ export function DepartureCard({
         departureCityHint={departureCity}
         isPending={isPending}
         legs={localLegs}
-        locale={locale}
         nextDestinationHint={nextDestinationCity}
         onCancel={() => setIsModalOpen(false)}
         onSave={handleSave}

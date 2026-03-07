@@ -1,3 +1,5 @@
+import { memo } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   ChevronDown,
   ChevronUp,
@@ -23,10 +25,10 @@ type DestinationCardProps = {
   startDate: string | null;
   travelDays?: number;
   expanded: boolean;
-  openMenuId: number | null;
-  onToggle: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  isMenuOpen: boolean;
+  onToggle: (destinationId: number) => void;
+  onEdit: (destinationId: number) => void;
+  onDelete: (destinationId: number) => void;
   setOpenMenuId: (destinationId: number | null) => void;
 };
 
@@ -78,31 +80,11 @@ function hasAccommodationContent(accommodation: Accommodation | null): boolean {
   );
 }
 
-function getTransportLabel(locale: string, type: TransportType): string {
-  if (locale === 'es') {
-    if (type === 'train') {
-      return 'Tren';
-    }
-
-    if (type === 'bus') {
-      return 'Bus';
-    }
-
-    return 'Avión';
-  }
-
-  if (type === 'train') {
-    return 'Train';
-  }
-
-  if (type === 'bus') {
-    return 'Bus';
-  }
-
-  return 'Plane';
+function getTransportLabel(type: TransportType, tTransport: (key: 'plane' | 'train' | 'bus') => string): string {
+  return tTransport(type);
 }
 
-function getTransportDetails(transport: Transport | null, locale: string): LabelValue[] {
+function getTransportDetails(transport: Transport | null, tTransport: (key: string) => string): LabelValue[] {
   if (!transport || !hasTransportContent(transport)) {
     return [];
   }
@@ -111,28 +93,28 @@ function getTransportDetails(transport: Transport | null, locale: string): Label
 
   if (transport.transport_type && transport.transport_type !== 'plane') {
     details.push({
-      label: locale === 'es' ? 'Tipo' : 'Type',
-      value: getTransportLabel(locale, transport.transport_type)
+      label: tTransport('type'),
+      value: getTransportLabel(transport.transport_type, tTransport as (key: 'plane' | 'train' | 'bus') => string)
     });
   }
 
   if (transport.leave_accommodation_time) {
     details.push({
-      label: locale === 'es' ? 'Salida alojamiento' : 'Leave accommodation',
+      label: tTransport('leaveTime'),
       value: transport.leave_accommodation_time
     });
   }
 
   if (transport.terminal) {
     details.push({
-      label: locale === 'es' ? 'Terminal' : 'Terminal',
+      label: tTransport('terminal'),
       value: transport.terminal
     });
   }
 
   if (transport.company) {
     details.push({
-      label: locale === 'es' ? 'Empresa' : 'Company',
+      label: tTransport('company'),
       value: transport.company
     });
   }
@@ -140,14 +122,14 @@ function getTransportDetails(transport: Transport | null, locale: string): Label
   const reservation = [transport.booking_number, transport.booking_code].filter(Boolean).join(' / ');
   if (reservation) {
     details.push({
-      label: locale === 'es' ? 'Reserva' : 'Reservation',
+      label: tTransport('reservation'),
       value: reservation
     });
   }
 
   if (transport.departure_time) {
     details.push({
-      label: locale === 'es' ? 'Hora salida' : 'Departure time',
+      label: tTransport('departureTime'),
       value: transport.departure_time
     });
   }
@@ -155,7 +137,7 @@ function getTransportDetails(transport: Transport | null, locale: string): Label
   return details;
 }
 
-function getAccommodationDetails(accommodation: Accommodation | null, locale: string): LabelValue[] {
+function getAccommodationDetails(accommodation: Accommodation | null, tAccommodation: (key: string) => string): LabelValue[] {
   if (!accommodation || !hasAccommodationContent(accommodation)) {
     return [];
   }
@@ -164,17 +146,16 @@ function getAccommodationDetails(accommodation: Accommodation | null, locale: st
 
   if (accommodation.check_in || accommodation.check_out) {
     details.push({
-      label: locale === 'es' ? 'Horarios' : 'Schedule',
-      value:
-        locale === 'es'
-          ? `Check-in: ${accommodation.check_in ?? '-'} | Check-out: ${accommodation.check_out ?? '-'}`
-          : `Check-in: ${accommodation.check_in ?? '-'} | Check-out: ${accommodation.check_out ?? '-'}`
+      label: tAccommodation('schedule'),
+      value: `${tAccommodation('checkIn')}: ${accommodation.check_in ?? '-'} | ${tAccommodation('checkOut')}: ${
+        accommodation.check_out ?? '-'
+      }`
     });
   }
 
   if (accommodation.name) {
     details.push({
-      label: locale === 'es' ? 'Nombre' : 'Name',
+      label: tAccommodation('name'),
       value: accommodation.name
     });
   }
@@ -182,14 +163,14 @@ function getAccommodationDetails(accommodation: Accommodation | null, locale: st
   const booking = accommodation.booking_code ?? accommodation.booking_link;
   if (booking) {
     details.push({
-      label: locale === 'es' ? 'Reserva' : 'Booking',
+      label: tAccommodation('booking'),
       value: booking
     });
   }
 
   if (accommodation.address) {
     details.push({
-      label: locale === 'es' ? 'Dirección' : 'Address',
+      label: tAccommodation('address'),
       value: accommodation.address
     });
   }
@@ -197,7 +178,7 @@ function getAccommodationDetails(accommodation: Accommodation | null, locale: st
   return details;
 }
 
-export function DestinationCard({
+export const DestinationCard = memo(function DestinationCard({
   destination,
   destinations,
   index,
@@ -205,26 +186,33 @@ export function DestinationCard({
   startDate,
   travelDays = 0,
   expanded,
-  openMenuId,
+  isMenuOpen,
   onToggle,
   onEdit,
   onDelete,
   setOpenMenuId
 }: DestinationCardProps) {
+  const tAccommodation = useTranslations('accommodation');
+  const tCommon = useTranslations('common');
+  const tDestinations = useTranslations('destinations');
+  const tTransport = useTranslations('transport');
+  const tTrips = useTranslations('trips');
   const localeTag = locale === 'en' ? 'en-US' : 'es-ES';
   const { start, end } = getDestinationDates(startDate, destinations, index, travelDays);
   const dateRange = start && end ? `${formatDate(start, localeTag)} - ${formatDate(end, localeTag)}` : null;
   const cardId = destination.destination_id;
   const menuId = `destination-actions-${cardId}`;
-  const fallbackName = locale === 'es' ? 'Nueva Ciudad' : 'New City';
-  const actionsLabel = locale === 'es' ? 'Acciones' : 'Actions';
+  const fallbackName = tDestinations('newCity');
+  const actionsLabel = tCommon('actions');
 
   const hasTransport = hasTransportContent(destination.transport);
   const hasAccommodation = !destination.is_stopover && hasAccommodationContent(destination.accommodation);
   const TransportIcon = getTransportIconByType(destination.transport?.transport_type);
 
-  const transportDetails = getTransportDetails(destination.transport, locale);
-  const accommodationDetails = destination.is_stopover ? [] : getAccommodationDetails(destination.accommodation, locale);
+  const transportDetails = getTransportDetails(destination.transport, tTransport);
+  const accommodationDetails = destination.is_stopover
+    ? []
+    : getAccommodationDetails(destination.accommodation, tAccommodation);
   const transportPreview = transportDetails.slice(0, 2);
   const accommodationPreview = accommodationDetails.slice(0, 2);
   const hasMoreContent =
@@ -261,10 +249,8 @@ export function DestinationCard({
                 )}
               >
                 {destination.is_stopover
-                  ? locale === 'es'
-                    ? 'Escala'
-                    : 'Stopover'
-                  : `${destination.duration} ${locale === 'es' ? 'días' : 'days'}`}
+                  ? tDestinations('stopover')
+                  : tTrips('days', { count: destination.duration })}
               </span>
 
               {dateRange ? (
@@ -278,20 +264,20 @@ export function DestinationCard({
           <div className="destination-action-menu relative">
             <button
               aria-label={actionsLabel}
-              aria-controls={openMenuId === cardId ? menuId : undefined}
-              aria-expanded={openMenuId === cardId}
+              aria-controls={isMenuOpen ? menuId : undefined}
+              aria-expanded={isMenuOpen}
               aria-haspopup="menu"
               className="rounded-md p-2 text-foreground-muted transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
               onClick={(event) => {
                 event.stopPropagation();
-                setOpenMenuId(openMenuId === cardId ? null : cardId);
+                setOpenMenuId(isMenuOpen ? null : cardId);
               }}
               type="button"
             >
               <MoreVertical aria-hidden="true" className="h-4 w-4" />
             </button>
 
-            {openMenuId === cardId ? (
+            {isMenuOpen ? (
               <div
                 className="absolute right-0 top-full z-10 mt-1 min-w-[10rem] animate-fade-in rounded-lg border border-border bg-elevated py-1 shadow-floating"
                 id={menuId}
@@ -302,26 +288,26 @@ export function DestinationCard({
                   onClick={(event) => {
                     event.stopPropagation();
                     setOpenMenuId(null);
-                    onEdit();
+                    onEdit(cardId);
                   }}
                   role="menuitem"
                   type="button"
-                >
-                  <Edit2 aria-hidden="true" className="h-4 w-4" />
-                  {locale === 'es' ? 'Editar' : 'Edit'}
+                  >
+                    <Edit2 aria-hidden="true" className="h-4 w-4" />
+                  {tCommon('edit')}
                 </button>
                 <button
                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm font-medium text-danger transition-colors duration-fast ease-standard hover:bg-danger/10"
                   onClick={(event) => {
                     event.stopPropagation();
                     setOpenMenuId(null);
-                    onDelete();
+                    onDelete(cardId);
                   }}
                   role="menuitem"
                   type="button"
                 >
                   <Trash2 aria-hidden="true" className="h-4 w-4" />
-                  {locale === 'es' ? 'Eliminar' : 'Delete'}
+                  {tCommon('delete')}
                 </button>
               </div>
             ) : null}
@@ -355,16 +341,12 @@ export function DestinationCard({
         {hasMoreContent ? (
           <button
             className="inline-flex items-center gap-1.5 rounded-md text-body-sm font-semibold text-brand-primary transition-colors duration-fast ease-standard hover:text-brand-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
-            onClick={onToggle}
+            onClick={() => onToggle(cardId)}
             type="button"
           >
             {expanded
-              ? locale === 'es'
-                ? 'Ocultar detalles'
-                : 'Hide details'
-              : locale === 'es'
-                ? 'Ver detalles'
-                : 'Show details'}
+              ? tCommon('hideDetails')
+              : tCommon('showDetails')}
             {expanded ? <ChevronUp aria-hidden="true" className="h-4 w-4" /> : <ChevronDown aria-hidden="true" className="h-4 w-4" />}
           </button>
         ) : null}
@@ -375,7 +357,7 @@ export function DestinationCard({
               <div className="rounded-lg border border-border bg-elevated p-3">
                 <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-brand-primary">
                   <TransportIcon aria-hidden="true" className="h-4 w-4" />
-                  {locale === 'es' ? 'Transporte' : 'Transport'}
+                  {tTransport('title')}
                 </h4>
                 <div className="space-y-1 text-body-sm text-foreground-secondary">
                   {transportDetails.map((field) => (
@@ -391,7 +373,7 @@ export function DestinationCard({
               <div className="rounded-lg border border-border bg-elevated p-3">
                 <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-brand-accent">
                   <Hotel aria-hidden="true" className="h-4 w-4" />
-                  {locale === 'es' ? 'Hospedaje' : 'Accommodation'}
+                  {tAccommodation('title')}
                 </h4>
                 <div className="space-y-1 text-body-sm text-foreground-secondary">
                   {accommodationDetails.map((field) => (
@@ -407,7 +389,7 @@ export function DestinationCard({
               <div className="rounded-lg border border-border bg-elevated p-3">
                 <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-foreground-primary">
                   <StickyNote aria-hidden="true" className="h-4 w-4" />
-                  {locale === 'es' ? 'Notas' : 'Notes'}
+                  {tDestinations('notes')}
                 </h4>
                 <p className="text-body-sm text-foreground-secondary">{destination.notes}</p>
               </div>
@@ -417,7 +399,7 @@ export function DestinationCard({
               <div className="rounded-lg border border-border bg-elevated p-3">
                 <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-success">
                   <DollarSign aria-hidden="true" className="h-4 w-4" />
-                  {locale === 'es' ? 'Presupuesto' : 'Budget'}
+                  {tDestinations('budget')}
                 </h4>
                 <p className="text-body-sm text-foreground-secondary">${destination.budget}</p>
               </div>
@@ -427,4 +409,4 @@ export function DestinationCard({
       </div>
     </div>
   );
-}
+});

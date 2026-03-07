@@ -18,6 +18,8 @@ type ShareModalProps = {
 };
 
 export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
+  const tCommon = useTranslations('common');
+  const tErrors = useTranslations('errors');
   const tShare = useTranslations('share');
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -39,7 +41,7 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
         const result = await createShareLinkAction({ locale, tripId });
         setShareUrl(result.shareUrl);
       } catch {
-        setErrorMessage(locale === 'es' ? 'No se pudo generar el enlace.' : 'Could not generate the share link.');
+        setErrorMessage(tErrors('generateShareLink'));
       }
     });
   };
@@ -54,7 +56,7 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setErrorMessage(locale === 'es' ? 'No se pudo copiar el enlace.' : 'Could not copy the link.');
+      setErrorMessage(tErrors('copyLink'));
     }
   };
 
@@ -81,7 +83,7 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
             {isPending ? (
               <>
                 <Spinner className="mr-2" />
-                {locale === 'es' ? 'Generando...' : 'Generating...'}
+                {tShare('generating')}
               </>
             ) : (
               tShare('generateLink')
@@ -111,7 +113,7 @@ export function ShareModal({ locale, tripId, open, onClose }: ShareModalProps) {
 
         <DialogFooter>
           <Button disabled={isPending} onClick={onClose} type="button" variant="outline">
-            {locale === 'es' ? 'Cerrar' : 'Close'}
+            {tCommon('close')}
           </Button>
         </DialogFooter>
       </DialogContent>

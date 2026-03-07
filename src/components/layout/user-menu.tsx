@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, Globe, LogOut, Monitor, Moon, Settings, Sun } from 'lucide-react';
+import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from '@/lib/auth-client';
@@ -161,7 +162,13 @@ export function UserMenu({ userName, userImage, locale }: UserMenuProps) {
         className="inline-flex h-11 items-center gap-2 rounded-pill border border-border bg-surface px-1.5 text-foreground-secondary shadow-shadow-1 transition-[border-color,box-shadow,color] duration-base ease-standard hover:border-border-strong hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
       >
         {userImage ? (
-          <img alt={userName ?? 'User'} src={userImage} className="block h-8 w-8 rounded-full object-cover" />
+          <Image
+            alt={userName ?? 'User'}
+            src={userImage}
+            width={32}
+            height={32}
+            className="block h-8 w-8 rounded-full object-cover"
+          />
         ) : initials ? (
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-accent-soft text-label-md font-semibold text-brand-primary">
             {initials}

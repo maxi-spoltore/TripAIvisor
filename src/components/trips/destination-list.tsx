@@ -2,6 +2,7 @@
 
 import { DragEvent, FormEvent, Fragment, useCallback, useEffect, useReducer, useState, useTransition } from 'react';
 import { ArrowRightLeft, PlaneLanding, PlaneTakeoff, Plus } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import {
   createDestinationAction,
@@ -24,8 +25,12 @@ import { cn } from '@/lib/utils';
 import type { Destination, DestinationWithRelations, TransportWithLegs } from '@/types/database';
 import { DepartureCard } from './departure-card';
 import { DestinationCard } from './destination-card';
-import { DestinationModal, type DestinationModalSubmitInput } from './destination-modal';
+import type { DestinationModalSubmitInput } from './destination-modal';
 import { ReturnCard } from './return-card';
+
+const DestinationModal = dynamic(() =>
+  import('./destination-modal').then((mod) => mod.DestinationModal)
+);
 
 type DestinationListProps = {
   locale: string;
@@ -216,6 +221,7 @@ export function DestinationList({
 }: DestinationListProps) {
   const tCommon = useTranslations('common');
   const tDestinations = useTranslations('destinations');
+  const tErrors = useTranslations('errors');
   const [state, dispatch] = useReducer(destinationListReducer, destinations, createInitialState);
   const { items, expandedCards, openMenuId, editingDestinationId, pendingDeleteId, draggedIndex, errorMessage } = state;
   const [insertAtPosition, setInsertAtPosition] = useState<number | null>(null);
@@ -284,7 +290,7 @@ export function DestinationList({
         dispatch({ type: 'ROLLBACK_ITEMS', items: previousItems });
         dispatch({
           type: 'SET_ERROR',
-          message: locale === 'es' ? 'No se pudo reordenar los destinos.' : 'Could not reorder destinations.'
+          message: tErrors('reorderDestinations')
         });
       }
     });
@@ -295,7 +301,7 @@ export function DestinationList({
 
     const trimmedCity = newCity.trim();
     if (!trimmedCity) {
-      dispatch({ type: 'SET_ERROR', message: locale === 'es' ? 'La ciudad es obligatoria.' : 'City is required.' });
+      dispatch({ type: 'SET_ERROR', message: tErrors('cityRequired') });
       return;
     }
 
@@ -323,38 +329,41 @@ export function DestinationList({
       } catch {
         dispatch({
           type: 'SET_ERROR',
-          message: locale === 'es' ? 'No se pudo agregar el destino.' : 'Could not add destination.'
+          message: tErrors('addDestination')
         });
       }
     });
   };
 
-  const handleDeleteDestination = (destinationId: number) => {
-    const previousItems = items;
-    dispatch({ type: 'REMOVE_ITEM', destinationId });
+  const handleDeleteDestination = useCallback(
+    (destinationId: number) => {
+      const previousItems = items;
+      dispatch({ type: 'REMOVE_ITEM', destinationId });
 
-    startTransition(async () => {
-      try {
-        await deleteDestinationAction({
-          locale,
-          tripId,
-          destinationId
-        });
-      } catch {
-        dispatch({ type: 'ROLLBACK_ITEMS', items: previousItems });
-        dispatch({
-          type: 'SET_ERROR',
-          message: locale === 'es' ? 'No se pudo eliminar el destino.' : 'Could not delete destination.'
-        });
-      }
-    });
-  };
+      startTransition(async () => {
+        try {
+          await deleteDestinationAction({
+            locale,
+            tripId,
+            destinationId
+          });
+        } catch {
+          dispatch({ type: 'ROLLBACK_ITEMS', items: previousItems });
+          dispatch({
+            type: 'SET_ERROR',
+            message: tErrors('deleteDestination')
+          });
+        }
+      });
+    },
+    [items, locale, tripId, startTransition, tErrors]
+  );
 
-  const handleRequestDeleteDestination = (destinationId: number) => {
+  const handleRequestDeleteDestination = useCallback((destinationId: number) => {
     dispatch({ type: 'REQUEST_DELETE', destinationId });
-  };
+  }, []);
 
-  const handleConfirmDeleteDestination = () => {
+  const handleConfirmDeleteDestination = useCallback(() => {
     if (pendingDeleteId === null) {
       return;
     }
@@ -362,15 +371,15 @@ export function DestinationList({
     const destinationId = pendingDeleteId;
     dispatch({ type: 'CONFIRM_DELETE' });
     handleDeleteDestination(destinationId);
-  };
+  }, [handleDeleteDestination, pendingDeleteId]);
 
-  const handleToggleCard = (destinationId: number) => {
+  const handleToggleCard = useCallback((destinationId: number) => {
     dispatch({ type: 'TOGGLE_CARD', destinationId });
-  };
+  }, []);
 
-  const handleOpenModal = (destinationId: number) => {
+  const handleOpenModal = useCallback((destinationId: number) => {
     dispatch({ type: 'OPEN_EDIT', destinationId });
-  };
+  }, []);
 
   const handleSaveDestinationDetails = (payload: DestinationModalSubmitInput) => {
     dispatch({ type: 'SET_ERROR', message: null });
@@ -394,7 +403,7 @@ export function DestinationList({
       } catch {
         dispatch({
           type: 'SET_ERROR',
-          message: locale === 'es' ? 'No se pudo guardar el destino.' : 'Could not save destination.'
+          message: tErrors('saveDestination')
         });
       }
     });
@@ -447,7 +456,7 @@ export function DestinationList({
             <Input
               disabled={isPending}
               onChange={(event) => setNewCity(event.target.value)}
-              placeholder={locale === 'es' ? 'Nueva Ciudad' : 'New City'}
+              placeholder={tDestinations('newCity')}
               value={newCity}
             />
           </div>
@@ -459,7 +468,7 @@ export function DestinationList({
                 disabled={isPending}
                 min={1}
                 onChange={(event) => setNewDuration(event.target.value)}
-                placeholder={locale === 'es' ? 'Días' : 'Days'}
+                placeholder={tDestinations('daysPlaceholder')}
                 type="number"
                 value={newDuration}
               />
@@ -472,10 +481,10 @@ export function DestinationList({
             {isPending ? (
               <>
                 <Spinner className="mr-2" />
-                {locale === 'es' ? 'Agregando...' : 'Adding...'}
+                {tCommon('adding')}
               </>
             ) : (
-              locale === 'es' ? 'Agregar' : 'Add'
+              tCommon('add')
             )}
           </Button>
           {typeof atPosition === 'number' ? (
@@ -507,7 +516,7 @@ export function DestinationList({
       {items.length === 0 ? (
         <>
           <p className="rounded-lg border border-dashed border-border-strong bg-surface p-4 text-body-sm text-foreground-secondary">
-            {locale === 'es' ? 'No hay destinos todavía.' : 'No destinations yet.'}
+            {tDestinations('noDestinationsYet')}
           </p>
           {addDestinationForm(false)}
         </>
@@ -579,12 +588,12 @@ export function DestinationList({
                     destination={destination}
                     destinations={items}
                     expanded={Boolean(expandedCards[destination.destination_id])}
+                    isMenuOpen={openMenuId === destination.destination_id}
                     index={index}
                     locale={locale}
-                    onDelete={() => handleRequestDeleteDestination(destination.destination_id)}
-                    onEdit={() => handleOpenModal(destination.destination_id)}
-                    onToggle={() => handleToggleCard(destination.destination_id)}
-                    openMenuId={openMenuId}
+                    onDelete={handleRequestDeleteDestination}
+                    onEdit={handleOpenModal}
+                    onToggle={handleToggleCard}
                     setOpenMenuId={handleSetOpenMenuId}
                     startDate={startDate}
                     travelDays={travelDays ?? 0}
@@ -616,14 +625,15 @@ export function DestinationList({
         </div>
       )}
 
-      <DestinationModal
-        destination={editingDestination}
-        isPending={isPending}
-        locale={locale}
-        onCancel={() => dispatch({ type: 'CLOSE_EDIT' })}
-        onSave={handleSaveDestinationDetails}
-        open={editingDestination !== null}
-      />
+      {editingDestination ? (
+        <DestinationModal
+          destination={editingDestination}
+          isPending={isPending}
+          onCancel={() => dispatch({ type: 'CLOSE_EDIT' })}
+          onSave={handleSaveDestinationDetails}
+          open
+        />
+      ) : null}
 
       <Dialog
         open={pendingDeleteId !== null}

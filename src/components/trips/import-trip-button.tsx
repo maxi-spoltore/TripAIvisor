@@ -3,6 +3,7 @@
 import { Upload } from 'lucide-react';
 import { ChangeEvent, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { importTripFromDataAction } from '@/app/actions/trips';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -15,6 +16,7 @@ type ImportTripButtonProps = {
 };
 
 export function ImportTripButton({ locale, label, loadingLabel }: ImportTripButtonProps) {
+  const tErrors = useTranslations('errors');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export function ImportTripButton({ locale, label, loadingLabel }: ImportTripButt
       const parsedData: unknown = JSON.parse(fileText);
 
       if (!validateImportData(parsedData)) {
-        setErrorMessage(locale === 'es' ? 'Formato de archivo inválido.' : 'Invalid file format.');
+        setErrorMessage(tErrors('invalidFileFormat'));
         return;
       }
 
@@ -70,12 +72,12 @@ export function ImportTripButton({ locale, label, loadingLabel }: ImportTripButt
             navigateWithTransition(`/${locale}/trips/${tripId}`);
             router.refresh();
           } catch {
-            setErrorMessage(locale === 'es' ? 'No se pudo importar el viaje.' : 'Could not import the trip.');
+            setErrorMessage(tErrors('importTrip'));
           }
         })();
       });
     } catch {
-      setErrorMessage(locale === 'es' ? 'El archivo no contiene JSON válido.' : 'The file is not valid JSON.');
+      setErrorMessage(tErrors('invalidJson'));
     }
   };
 

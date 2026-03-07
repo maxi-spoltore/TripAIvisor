@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Bus, ChevronDown, ChevronUp, Hotel, Plane, StickyNote, Train, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,6 @@ import { cn } from '@/lib/utils';
 import type { DestinationWithRelations, TransportType } from '@/types/database';
 
 type DestinationModalProps = {
-  locale: string;
   destination: DestinationWithRelations | null;
   open: boolean;
   isPending?: boolean;
@@ -112,28 +112,8 @@ function hasAccommodationContent(destination: DestinationWithRelations | null): 
   );
 }
 
-function getTransportLabel(locale: string, value: TransportType): string {
-  if (locale === 'es') {
-    if (value === 'train') {
-      return 'Tren';
-    }
-
-    if (value === 'bus') {
-      return 'Bus';
-    }
-
-    return 'Avión';
-  }
-
-  if (value === 'train') {
-    return 'Train';
-  }
-
-  if (value === 'bus') {
-    return 'Bus';
-  }
-
-  return 'Plane';
+function getTransportLabel(value: TransportType, tTransport: (key: 'plane' | 'train' | 'bus') => string): string {
+  return tTransport(value);
 }
 
 function getTransportIcon(value: TransportType) {
@@ -149,13 +129,17 @@ function getTransportIcon(value: TransportType) {
 }
 
 export function DestinationModal({
-  locale,
   destination,
   open,
   isPending = false,
   onCancel,
   onSave
 }: DestinationModalProps) {
+  const tCommon = useTranslations('common');
+  const tDestinations = useTranslations('destinations');
+  const tTransport = useTranslations('transport');
+  const tAccommodation = useTranslations('accommodation');
+  const tErrors = useTranslations('errors');
   const [formState, setFormState] = useState<DestinationModalFormState | null>(null);
   const [showTransport, setShowTransport] = useState(false);
   const [showAccommodation, setShowAccommodation] = useState(false);
@@ -199,49 +183,6 @@ export function DestinationModal({
     setErrorMessage(null);
   }, [destination, open]);
 
-  const strings = useMemo(
-    () => ({
-      cityLabel: locale === 'es' ? 'Ciudad *' : 'City *',
-      cityPlaceholder: locale === 'es' ? 'Ej: Madrid' : 'Ex: Madrid',
-      durationLabel: locale === 'es' ? 'Duración (días) *' : 'Duration (days) *',
-      transportTitle: locale === 'es' ? 'Transporte' : 'Transport',
-      accommodationTitle: locale === 'es' ? 'Hospedaje' : 'Accommodation',
-      additionalTitle: locale === 'es' ? 'Adicionales' : 'Additional',
-      transportTypeLabel: locale === 'es' ? 'Tipo de transporte' : 'Transport type',
-      leaveTimeLabel: locale === 'es' ? 'Hora salida del alojamiento' : 'Leave accommodation time',
-      terminalLabel: locale === 'es' ? 'Terminal de origen' : 'Departure terminal',
-      terminalPlaceholder: locale === 'es' ? 'Ej: Aeropuerto Barajas - T4' : 'Ex: Barajas Airport - T4',
-      companyLabel: locale === 'es' ? 'Empresa' : 'Company',
-      companyPlaceholder: locale === 'es' ? 'Ej: Iberia, Renfe, Alsa' : 'Ex: Iberia, Renfe, Alsa',
-      bookingNumberLabel: locale === 'es' ? 'Número de boleto' : 'Ticket number',
-      bookingCodeLabel: locale === 'es' ? 'Código de reserva' : 'Booking code',
-      departureTimeLabel: locale === 'es' ? 'Hora de salida del transporte' : 'Transport departure time',
-      checkInLabel: locale === 'es' ? 'Check-in' : 'Check-in',
-      checkOutLabel: locale === 'es' ? 'Check-out' : 'Check-out',
-      accommodationNameLabel: locale === 'es' ? 'Nombre del alojamiento' : 'Accommodation name',
-      accommodationNamePlaceholder: locale === 'es' ? 'Ej: Hotel Ejemplo' : 'Ex: Sample Hotel',
-      bookingLinkLabel: locale === 'es' ? 'Link de reserva' : 'Booking link',
-      bookingLinkPlaceholder: 'https://...',
-      addressLabel: locale === 'es' ? 'Dirección' : 'Address',
-      addressPlaceholder: locale === 'es' ? 'Calle, número, ciudad' : 'Street, number, city',
-      notesLabel: locale === 'es' ? 'Notas' : 'Notes',
-      notesPlaceholder:
-        locale === 'es' ? 'Lugares para visitar, recordatorios, etc.' : 'Places to visit, reminders, etc.',
-      budgetLabel: locale === 'es' ? 'Presupuesto estimado' : 'Estimated budget',
-      budgetPlaceholder: '0',
-      save: locale === 'es' ? 'Guardar' : 'Save',
-      saving: locale === 'es' ? 'Guardando...' : 'Saving...',
-      cancel: locale === 'es' ? 'Cancelar' : 'Cancel',
-      cityRequired: locale === 'es' ? 'El nombre de la ciudad es obligatorio.' : 'City name is required.',
-      durationInvalid:
-        locale === 'es'
-          ? 'La duración debe ser al menos 1 día (0 para escala).'
-          : 'Duration must be at least 1 day (0 for stopover).',
-      budgetInvalid: locale === 'es' ? 'El presupuesto debe ser un número válido.' : 'Budget must be a valid number.'
-    }),
-    [locale]
-  );
-
   if (!destination || !formState) {
     return null;
   }
@@ -251,20 +192,20 @@ export function DestinationModal({
   const handleSubmit = () => {
     const city = formState.city.trim();
     if (!city) {
-      setErrorMessage(strings.cityRequired);
+      setErrorMessage(tErrors('cityNameRequired'));
       return;
     }
 
     const duration = Number(formState.duration);
     if (!Number.isFinite(duration) || (!formState.isStopover && duration < 1) || duration < 0) {
-      setErrorMessage(strings.durationInvalid);
+      setErrorMessage(tErrors('durationInvalid'));
       return;
     }
 
     const normalizedBudget = formState.budget.trim();
     const budget = normalizedBudget ? Number(normalizedBudget) : null;
     if (normalizedBudget && !Number.isFinite(budget)) {
-      setErrorMessage(strings.budgetInvalid);
+      setErrorMessage(tErrors('budgetInvalid'));
       return;
     }
 
@@ -309,11 +250,10 @@ export function DestinationModal({
       <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden p-0 max-sm:h-screen max-sm:max-h-screen max-sm:rounded-none">
         <DialogHeader className="mb-0 flex-row items-center justify-between gap-3 border-b border-border px-6 py-5">
           <DialogTitle className="text-xl font-bold">
-            {locale === 'es' ? 'Editar' : 'Edit'} —{' '}
-            {formState.city || (locale === 'es' ? 'Destino' : 'Destination')}
+            {tCommon('edit')} — {formState.city || tDestinations('fallbackDestination')}
           </DialogTitle>
           <button
-            aria-label="Close"
+            aria-label={tCommon('close')}
             type="button"
             className="rounded-lg p-2 text-foreground-muted transition-colors hover:bg-subtle hover:text-foreground-secondary"
             onClick={() => {
@@ -347,10 +287,10 @@ export function DestinationModal({
                 }}
                 type="checkbox"
               />
-              <Label>{locale === 'es' ? 'Escala' : 'Stopover'}</Label>
+              <Label>{tDestinations('stopover')}</Label>
             </div>
             <div className="space-y-1">
-              <Label>{strings.cityLabel}</Label>
+              <Label>{tDestinations('city')} *</Label>
               <Input
                 disabled={isPending}
                 onChange={(event) =>
@@ -363,13 +303,13 @@ export function DestinationModal({
                       : previous
                   )
                 }
-                placeholder={strings.cityPlaceholder}
+                placeholder={tDestinations('cityPlaceholder')}
                 value={formState.city}
               />
             </div>
             {!formState.isStopover ? (
               <div className="space-y-1">
-                <Label>{strings.durationLabel}</Label>
+                <Label>{tDestinations('duration')} *</Label>
                 <Input
                   disabled={isPending}
                   min={1}
@@ -404,7 +344,7 @@ export function DestinationModal({
             >
               <span className="flex items-center gap-2 font-semibold text-foreground-primary">
                 <TransportIcon className="h-4 w-4 text-brand-primary" />
-                {strings.transportTitle}
+                {tTransport('title')}
               </span>
               {showTransport ? (
                 <ChevronUp className="h-4 w-4 text-foreground-muted" />
@@ -416,7 +356,7 @@ export function DestinationModal({
             {showTransport ? (
               <div className="mt-4 space-y-4">
                 <div className="space-y-1">
-                  <Label>{strings.transportTypeLabel}</Label>
+                  <Label>{tTransport('type')}</Label>
                   <Select
                     onValueChange={(value) =>
                       setFormState((previous) =>
@@ -437,14 +377,14 @@ export function DestinationModal({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="plane">{getTransportLabel(locale, 'plane')}</SelectItem>
-                      <SelectItem value="train">{getTransportLabel(locale, 'train')}</SelectItem>
-                      <SelectItem value="bus">{getTransportLabel(locale, 'bus')}</SelectItem>
+                      <SelectItem value="plane">{getTransportLabel('plane', tTransport)}</SelectItem>
+                      <SelectItem value="train">{getTransportLabel('train', tTransport)}</SelectItem>
+                      <SelectItem value="bus">{getTransportLabel('bus', tTransport)}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label>{strings.leaveTimeLabel}</Label>
+                  <Label>{tTransport('leaveTime')}</Label>
                   <Input
                     disabled={isPending}
                     onChange={(event) =>
@@ -465,7 +405,7 @@ export function DestinationModal({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label>{strings.terminalLabel}</Label>
+                  <Label>{tTransport('terminal')}</Label>
                   <Input
                     disabled={isPending}
                     onChange={(event) =>
@@ -481,12 +421,12 @@ export function DestinationModal({
                           : previous
                       )
                     }
-                    placeholder={strings.terminalPlaceholder}
+                    placeholder={tTransport('terminalPlaceholder')}
                     value={formState.transport.terminal}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label>{strings.companyLabel}</Label>
+                  <Label>{tTransport('company')}</Label>
                   <Input
                     disabled={isPending}
                     onChange={(event) =>
@@ -502,12 +442,12 @@ export function DestinationModal({
                           : previous
                       )
                     }
-                    placeholder={strings.companyPlaceholder}
+                    placeholder={tTransport('companyPlaceholder')}
                     value={formState.transport.company}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label>{strings.bookingNumberLabel}</Label>
+                  <Label>{tTransport('bookingNumber')}</Label>
                   <Input
                     disabled={isPending}
                     onChange={(event) =>
@@ -527,7 +467,7 @@ export function DestinationModal({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label>{strings.bookingCodeLabel}</Label>
+                  <Label>{tTransport('bookingCode')}</Label>
                   <Input
                     disabled={isPending}
                     onChange={(event) =>
@@ -547,7 +487,7 @@ export function DestinationModal({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label>{strings.departureTimeLabel}</Label>
+                  <Label>{tTransport('departureTime')}</Label>
                   <Input
                     disabled={isPending}
                     onChange={(event) =>
@@ -585,7 +525,7 @@ export function DestinationModal({
             >
               <span className="flex items-center gap-2 font-semibold text-foreground-primary">
                 <Hotel className="h-4 w-4 text-warning" />
-                {strings.accommodationTitle}
+                {tAccommodation('title')}
               </span>
               {showAccommodation ? (
                 <ChevronUp className="h-4 w-4 text-foreground-muted" />
@@ -598,7 +538,7 @@ export function DestinationModal({
               <div className="mt-4 space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <Label>{strings.checkInLabel}</Label>
+                    <Label>{tAccommodation('checkIn')}</Label>
                     <Input
                       disabled={isPending}
                       onChange={(event) =>
@@ -619,7 +559,7 @@ export function DestinationModal({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label>{strings.checkOutLabel}</Label>
+                    <Label>{tAccommodation('checkOut')}</Label>
                     <Input
                       disabled={isPending}
                       onChange={(event) =>
@@ -641,7 +581,7 @@ export function DestinationModal({
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label>{strings.accommodationNameLabel}</Label>
+                  <Label>{tAccommodation('name')}</Label>
                   <Input
                     disabled={isPending}
                     onChange={(event) =>
@@ -657,12 +597,12 @@ export function DestinationModal({
                           : previous
                       )
                     }
-                    placeholder={strings.accommodationNamePlaceholder}
+                    placeholder={tAccommodation('namePlaceholder')}
                     value={formState.accommodation.name}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label>{strings.bookingLinkLabel}</Label>
+                  <Label>{tAccommodation('bookingLink')}</Label>
                   <Input
                     disabled={isPending}
                     onChange={(event) =>
@@ -678,12 +618,12 @@ export function DestinationModal({
                           : previous
                       )
                     }
-                    placeholder={strings.bookingLinkPlaceholder}
+                    placeholder="https://..."
                     value={formState.accommodation.booking_link}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label>{strings.bookingCodeLabel}</Label>
+                  <Label>{tAccommodation('bookingCode')}</Label>
                   <Input
                     disabled={isPending}
                     onChange={(event) =>
@@ -703,7 +643,7 @@ export function DestinationModal({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label>{strings.addressLabel}</Label>
+                  <Label>{tAccommodation('address')}</Label>
                   <Input
                     disabled={isPending}
                     onChange={(event) =>
@@ -719,7 +659,7 @@ export function DestinationModal({
                           : previous
                       )
                     }
-                    placeholder={strings.addressPlaceholder}
+                    placeholder={tAccommodation('addressPlaceholder')}
                     value={formState.accommodation.address}
                   />
                 </div>
@@ -741,7 +681,7 @@ export function DestinationModal({
             >
               <span className="flex items-center gap-2 font-semibold text-foreground-primary">
                 <StickyNote className="h-4 w-4 text-foreground-muted" />
-                {strings.additionalTitle}
+                {tDestinations('additional')}
               </span>
               {showAdditional ? (
                 <ChevronUp className="h-4 w-4 text-foreground-muted" />
@@ -753,7 +693,7 @@ export function DestinationModal({
             {showAdditional ? (
               <div className="mt-4 space-y-4">
                 <div className="space-y-1">
-                  <Label>{strings.notesLabel}</Label>
+                  <Label>{tDestinations('notes')}</Label>
                   <Textarea
                     disabled={isPending}
                     onChange={(event) =>
@@ -766,13 +706,13 @@ export function DestinationModal({
                           : previous
                       )
                     }
-                    placeholder={strings.notesPlaceholder}
+                    placeholder={tDestinations('notesPlaceholder')}
                     rows={3}
                     value={formState.notes}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label>{strings.budgetLabel}</Label>
+                  <Label>{tDestinations('budget')}</Label>
                   <Input
                     disabled={isPending}
                     onChange={(event) =>
@@ -785,7 +725,7 @@ export function DestinationModal({
                           : previous
                       )
                     }
-                    placeholder={strings.budgetPlaceholder}
+                    placeholder={tDestinations('budgetPlaceholder')}
                     type="number"
                     value={formState.budget}
                   />
@@ -802,14 +742,14 @@ export function DestinationModal({
             {isPending ? (
               <>
                 <Spinner className="mr-2" />
-                {strings.saving}
+                {tCommon('saving')}
               </>
             ) : (
-              strings.save
+              tCommon('save')
             )}
           </Button>
           <Button className="flex-1" disabled={isPending} onClick={onCancel} variant="outline">
-            {strings.cancel}
+            {tCommon('cancel')}
           </Button>
         </DialogFooter>
       </DialogContent>

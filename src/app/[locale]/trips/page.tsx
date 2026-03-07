@@ -50,9 +50,7 @@ export default async function TripsListPage({ params }: TripsListPageProps) {
       <div className="flex flex-col gap-4 sm:gap-5 md:flex-row md:items-start md:justify-between">
         <div className="space-y-1">
           <h1 className="font-display text-display-md text-foreground-primary">{tTrips('title')}</h1>
-          <p className="max-w-2xl text-body-sm text-foreground-secondary">
-            {locale === 'es' ? 'Organiza y ajusta tus viajes en un solo lugar.' : 'Organize and fine-tune your trips in one place.'}
-          </p>
+          <p className="max-w-2xl text-body-sm text-foreground-secondary">{tTrips('listDescription')}</p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 md:min-w-[18rem]">
           <ImportTripButton label={tTrips('import')} loadingLabel={tTrips('importing')} locale={locale} />

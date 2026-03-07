@@ -1,4 +1,5 @@
 import { Calendar, Eye } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { formatDate, getDestinationDates, getTotalDays } from '@/lib/utils/dates';
 import type { DestinationWithRelations, TripWithRelations } from '@/types/database';
 
@@ -29,15 +30,11 @@ function formatDateRange(locale: string, startDate: string | null, destinations:
   return `${startLabel} - ${endLabel}`;
 }
 
-function renderDurationLabel(locale: string, duration: number): string {
-  return locale === 'es' ? `${duration} días` : `${duration} days`;
-}
-
 export function TripViewOnly({ locale, trip }: TripViewOnlyProps) {
-  const title = locale === 'es' ? 'Viaje compartido' : 'Shared Trip';
-  const readOnlyBanner =
-    locale === 'es' ? 'Estás viendo un viaje compartido (solo lectura)' : 'You are viewing a shared trip (read-only)';
-  const emptyState = locale === 'es' ? 'No hay destinos para mostrar.' : 'There are no destinations to show.';
+  const tDestinations = useTranslations('destinations');
+  const tShare = useTranslations('share');
+  const tTrips = useTranslations('trips');
+  const readOnlyBanner = tShare('readOnlyBanner');
   const dateRange = formatDateRange(locale, trip.start_date, trip.destinations);
   const localeTag = locale === 'en' ? 'en-US' : 'es-ES';
 
@@ -51,7 +48,7 @@ export function TripViewOnly({ locale, trip }: TripViewOnlyProps) {
       <header className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
         <div className="h-1 bg-gradient-to-r from-brand-primary to-brand-route" />
         <div className="p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-brand-primary">{title}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-primary">{tShare('sharedTrip')}</p>
           <h1 className="mt-2 text-3xl font-bold text-foreground-primary">{trip.title}</h1>
           {dateRange ? (
             <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-subtle px-3 py-1 text-sm font-medium text-brand-primary">
@@ -63,7 +60,7 @@ export function TripViewOnly({ locale, trip }: TripViewOnlyProps) {
       </header>
 
       {trip.destinations.length === 0 ? (
-        <p className="text-sm text-foreground-secondary">{emptyState}</p>
+        <p className="text-sm text-foreground-secondary">{tShare('noDestinationsToShow')}</p>
       ) : (
         <div className="relative space-y-0">
           <div className="absolute bottom-6 left-5 top-6 w-0.5 bg-border" />
@@ -82,14 +79,14 @@ export function TripViewOnly({ locale, trip }: TripViewOnlyProps) {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-lg font-bold text-foreground-primary">{destination.city}</h3>
                     <span className="rounded-full bg-subtle px-2.5 py-0.5 text-xs font-medium text-foreground-secondary">
-                      {renderDurationLabel(locale, destination.duration)}
+                      {tTrips('days', { count: destination.duration })}
                     </span>
                   </div>
                   {destinationRange ? <p className="mt-1 text-sm text-foreground-muted">{destinationRange}</p> : null}
                   {destination.notes ? <p className="mt-3 text-sm text-foreground-secondary">{destination.notes}</p> : null}
                   {destination.budget !== null ? (
                     <p className="mt-2 text-sm text-foreground-secondary">
-                      {locale === 'es' ? 'Presupuesto:' : 'Budget:'} ${destination.budget}
+                      {tDestinations('budget')}: ${destination.budget}
                     </p>
                   ) : null}
                 </div>

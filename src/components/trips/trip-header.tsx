@@ -164,7 +164,7 @@ export function TripHeader({ locale, tripId, title, startDate, endDate, totalDay
       <div className="space-y-5 p-4 sm:space-y-6 sm:p-6">
         <div className="group relative space-y-2">
           <p className="text-label-sm uppercase tracking-[0.03em] text-foreground-muted">
-            {locale === 'es' ? 'Resumen del viaje' : 'Trip summary'}
+            {tTrips('summary')}
           </p>
           <Input
             className="h-auto border-transparent bg-transparent px-0 py-0 font-display text-display-md font-bold leading-tight text-foreground-primary shadow-none focus-visible:border-transparent focus-visible:ring-0"

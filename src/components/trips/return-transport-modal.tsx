@@ -19,7 +19,6 @@ import { Spinner } from '@/components/ui/spinner';
 import type { Transport, TransportLeg, TransportType } from '@/types/database';
 
 type ReturnTransportModalProps = {
-  locale: string;
   tripId: number;
   transport: Transport | null;
   legs: TransportLeg[];
@@ -146,7 +145,6 @@ function emptyLeg(previousLeg?: LegFormState): LegFormState {
 }
 
 export function ReturnTransportModal({
-  locale,
   tripId,
   transport,
   legs,
@@ -276,10 +274,6 @@ export function ReturnTransportModal({
     : false;
   const returnCityMismatch = lastLeg ? isCityMismatch(lastLeg.destination_city, returnCityHint) : false;
 
-  const originCityLabel = locale === 'es' ? 'Ciudad de origen' : 'Origin city';
-  const destinationCityLabel = locale === 'es' ? 'Ciudad de destino' : 'Destination city';
-  const dayOffsetLabel = locale === 'es' ? 'Día de llegada (+N)' : 'Arrival day offset (+N)';
-
   return (
     <Dialog
       onOpenChange={(nextOpen) => {
@@ -292,11 +286,7 @@ export function ReturnTransportModal({
       <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto max-sm:h-screen max-sm:max-h-screen max-sm:rounded-none">
         <DialogHeader>
           <DialogTitle>{tTrips('editReturn')}</DialogTitle>
-          <DialogDescription>
-            {locale === 'es'
-              ? `Actualiza los detalles de transporte para el viaje #${tripId}.`
-              : `Update transport details for trip #${tripId}.`}
-          </DialogDescription>
+          <DialogDescription>{tTransport('returnModalDescription', { tripId })}</DialogDescription>
         </DialogHeader>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -474,7 +464,7 @@ export function ReturnTransportModal({
 
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1">
-                        <Label>{originCityLabel}</Label>
+                        <Label>{tTransport('originCity')}</Label>
                         <Input
                           disabled={isPending}
                           onChange={(event) => handleLegChange(index, 'origin_city', event.target.value)}
@@ -486,7 +476,7 @@ export function ReturnTransportModal({
                       </div>
 
                       <div className="space-y-1">
-                        <Label>{destinationCityLabel}</Label>
+                        <Label>{tTransport('destinationCity')}</Label>
                         <Input
                           disabled={isPending}
                           onChange={(event) => handleLegChange(index, 'destination_city', event.target.value)}
@@ -554,7 +544,7 @@ export function ReturnTransportModal({
                       </div>
 
                       <div className="space-y-1 sm:col-span-2">
-                        <Label>{dayOffsetLabel}</Label>
+                        <Label>{tTransport('arrivalDayOffset')}</Label>
                         <Input
                           disabled={isPending}
                           min={0}
@@ -590,7 +580,7 @@ export function ReturnTransportModal({
               {isPending ? (
                 <>
                   <Spinner className="mr-2" />
-                  {locale === 'es' ? 'Guardando...' : 'Saving...'}
+                  {tCommon('saving')}
                 </>
               ) : (
                 tCommon('save')
