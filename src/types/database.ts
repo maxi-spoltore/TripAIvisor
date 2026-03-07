@@ -1,5 +1,6 @@
 export type TransportType = 'plane' | 'train' | 'bus';
 export type TransportRole = 'destination' | 'departure' | 'return';
+export type ActivityCategory = 'meal' | 'tour' | 'ticketed' | 'general';
 
 export interface User {
   user_id: number;
@@ -120,6 +121,21 @@ export interface Accommodation {
   updated_at: string;
 }
 
+export interface Activity {
+  activity_id: number;
+  destination_id: number;
+  category: ActivityCategory;
+  name: string;
+  day_number: number;
+  start_time: string | null;
+  end_time: string | null;
+  position: number;
+  notes: string | null;
+  details: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface TripShare {
   share_id: number;
   trip_id: number;
@@ -132,6 +148,7 @@ export interface TripShare {
 export interface DestinationWithRelations extends Destination {
   transport: Transport | null;
   accommodation: Accommodation | null;
+  activities: Activity[];
 }
 
 export interface TripWithRelations extends Trip {

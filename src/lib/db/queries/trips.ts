@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import type {
   Accommodation,
+  Activity,
   Destination,
   DestinationWithRelations,
   TransportLeg,
@@ -130,6 +131,22 @@ export async function getTripById(tripId: number): Promise<TripWithRelations | n
     accommodations = (accommodationRows ?? []) as Accommodation[];
   }
 
+  let activities: Activity[] = [];
+  if (destinationIds.length > 0) {
+    const { data: activityRows, error: activityError } = await supabase
+      .from('activities')
+      .select('*')
+      .in('destination_id', destinationIds)
+      .order('day_number', { ascending: true })
+      .order('position', { ascending: true });
+
+    if (activityError) {
+      throw activityError;
+    }
+
+    activities = (activityRows ?? []) as Activity[];
+  }
+
   const { data: tripTransportRows, error: tripTransportError } = await supabase
     .from('transports')
     .select('*')
@@ -179,10 +196,18 @@ export async function getTripById(tripId: number): Promise<TripWithRelations | n
     accommodationsByDestinationId.set(accommodation.destination_id, accommodation);
   }
 
+  const activitiesByDestinationId = new Map<number, Activity[]>();
+  for (const activity of activities) {
+    const existingActivities = activitiesByDestinationId.get(activity.destination_id) ?? [];
+    existingActivities.push(activity);
+    activitiesByDestinationId.set(activity.destination_id, existingActivities);
+  }
+
   const destinationsWithRelations: DestinationWithRelations[] = destinations.map((destination) => ({
     ...destination,
     transport: transportsByDestinationId.get(destination.destination_id) ?? null,
-    accommodation: accommodationsByDestinationId.get(destination.destination_id) ?? null
+    accommodation: accommodationsByDestinationId.get(destination.destination_id) ?? null,
+    activities: activitiesByDestinationId.get(destination.destination_id) ?? []
   }));
 
   return {

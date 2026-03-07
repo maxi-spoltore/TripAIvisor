@@ -262,6 +262,7 @@ export async function saveDestinationDetailsAction(
   return {
     ...updatedDestination,
     transport: updatedTransport,
-    accommodation: updatedAccommodation
+    accommodation: updatedAccommodation,
+    activities: []
   };
 }

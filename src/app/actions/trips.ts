@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { upsertAccommodation } from '@/lib/db/queries/accommodations';
+import { createActivity } from '@/lib/db/queries/activities';
 import { createDestination, updateDestination } from '@/lib/db/queries/destinations';
 import { revertLegsToParent, upsertTransport, upsertTransportLegs } from '@/lib/db/queries/transports';
 import { createTrip, deleteTrip, updateTrip } from '@/lib/db/queries/trips';
@@ -108,6 +109,12 @@ function hasImportAccommodationValues(accommodation: ExportedAccommodation): boo
 function normalizeDestinationCity(destination: ExportedDestination): string {
   const normalizedCity = destination.city.trim();
   return normalizedCity || 'Unnamed destination';
+}
+
+function normalizeActivityDay(dayNumber: number, destinationDuration: number): number {
+  const normalized = Math.trunc(dayNumber);
+  const minDay = normalized >= 1 ? normalized : 1;
+  return Math.min(minDay, destinationDuration);
 }
 
 export async function createTripForLocaleAction(locale: string, formData: FormData): Promise<number> {
@@ -426,6 +433,19 @@ export async function importTripFromDataAction(input: {
         booking_link: normalizeOptionalText(destinationAccommodation.bookingLink),
         booking_code: normalizeOptionalText(destinationAccommodation.bookingCode),
         address: normalizeOptionalText(destinationAccommodation.address)
+      });
+    }
+
+    for (const activity of destination.activities ?? []) {
+      await createActivity({
+        destination_id: createdDestination.destination_id,
+        category: activity.category,
+        name: activity.name.trim(),
+        day_number: normalizeActivityDay(activity.dayNumber, createdDestination.duration),
+        start_time: normalizeOptionalText(activity.startTime),
+        end_time: normalizeOptionalText(activity.endTime),
+        notes: normalizeOptionalText(activity.notes),
+        details: activity.details
       });
     }
   }

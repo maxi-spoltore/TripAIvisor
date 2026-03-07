@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { getDestinationDates } from '@/lib/utils/dates';
 import { cn } from '@/lib/utils';
 import type { Destination, DestinationWithRelations, TransportWithLegs } from '@/types/database';
 import { DepartureCard } from './departure-card';
@@ -30,6 +31,9 @@ import { ReturnCard } from './return-card';
 
 const DestinationModal = dynamic(() =>
   import('./destination-modal').then((mod) => mod.DestinationModal)
+);
+const DayPlanner = dynamic(() =>
+  import('./day-planner').then((mod) => mod.DayPlanner)
 );
 
 type DestinationListProps = {
@@ -60,6 +64,7 @@ type DestinationListState = {
   items: DestinationWithRelations[];
   expandedCards: Record<number, boolean>;
   openMenuId: number | null;
+  scheduleOpenId: number | null;
   editingDestinationId: number | null;
   pendingDeleteId: number | null;
   draggedIndex: number | null;
@@ -78,6 +83,8 @@ type DestinationListAction =
   | { type: 'TOGGLE_CARD'; destinationId: number }
   | { type: 'OPEN_MENU'; destinationId: number | null }
   | { type: 'CLOSE_MENU' }
+  | { type: 'OPEN_SCHEDULE'; destinationId: number }
+  | { type: 'CLOSE_SCHEDULE' }
   | { type: 'OPEN_EDIT'; destinationId: number }
   | { type: 'CLOSE_EDIT' }
   | { type: 'REQUEST_DELETE'; destinationId: number }
@@ -87,11 +94,18 @@ type DestinationListAction =
 
 function destinationListReducer(state: DestinationListState, action: DestinationListAction): DestinationListState {
   switch (action.type) {
-    case 'SET_ITEMS':
-      return { ...state, items: sortByPosition(action.destinations) };
+    case 'SET_ITEMS': {
+      const sortedItems = sortByPosition(action.destinations);
+      const isScheduleOpen = sortedItems.some((item) => item.destination_id === state.scheduleOpenId);
+      return {
+        ...state,
+        items: sortedItems,
+        scheduleOpenId: isScheduleOpen ? state.scheduleOpenId : null
+      };
+    }
 
     case 'ADD_ITEM': {
-      const newItem = { ...action.destination, transport: null, accommodation: null };
+      const newItem = { ...action.destination, transport: null, accommodation: null, activities: [] };
       let nextItems: DestinationWithRelations[];
       if (typeof action.atPosition === 'number') {
         nextItems = [...state.items];
@@ -118,6 +132,7 @@ function destinationListReducer(state: DestinationListState, action: Destination
         items: nextItems,
         expandedCards: nextExpandedCards,
         openMenuId: null,
+        scheduleOpenId: state.scheduleOpenId === action.destinationId ? null : state.scheduleOpenId,
         editingDestinationId:
           state.editingDestinationId === action.destinationId ? null : state.editingDestinationId,
         errorMessage: null
@@ -172,6 +187,12 @@ function destinationListReducer(state: DestinationListState, action: Destination
     case 'CLOSE_MENU':
       return { ...state, openMenuId: null };
 
+    case 'OPEN_SCHEDULE':
+      return { ...state, scheduleOpenId: action.destinationId, openMenuId: null };
+
+    case 'CLOSE_SCHEDULE':
+      return { ...state, scheduleOpenId: null };
+
     case 'OPEN_EDIT':
       return { ...state, openMenuId: null, errorMessage: null, editingDestinationId: action.destinationId };
 
@@ -200,6 +221,7 @@ function createInitialState(destinations: DestinationWithRelations[]): Destinati
     items: sortByPosition(destinations),
     expandedCards: {},
     openMenuId: null,
+    scheduleOpenId: null,
     editingDestinationId: null,
     pendingDeleteId: null,
     draggedIndex: null,
@@ -223,7 +245,16 @@ export function DestinationList({
   const tDestinations = useTranslations('destinations');
   const tErrors = useTranslations('errors');
   const [state, dispatch] = useReducer(destinationListReducer, destinations, createInitialState);
-  const { items, expandedCards, openMenuId, editingDestinationId, pendingDeleteId, draggedIndex, errorMessage } = state;
+  const {
+    items,
+    expandedCards,
+    openMenuId,
+    scheduleOpenId,
+    editingDestinationId,
+    pendingDeleteId,
+    draggedIndex,
+    errorMessage
+  } = state;
   const [insertAtPosition, setInsertAtPosition] = useState<number | null>(null);
   const [newCity, setNewCity] = useState('');
   const [newDuration, setNewDuration] = useState('2');
@@ -380,6 +411,22 @@ export function DestinationList({
   const handleOpenModal = useCallback((destinationId: number) => {
     dispatch({ type: 'OPEN_EDIT', destinationId });
   }, []);
+
+  const handleOpenSchedule = useCallback(
+    (destinationId: number) => {
+      const destination = items.find((item) => item.destination_id === destinationId);
+      if (!destination || destination.is_stopover || destination.duration < 1) {
+        return;
+      }
+
+      dispatch(
+        scheduleOpenId === destinationId
+          ? { type: 'CLOSE_SCHEDULE' }
+          : { type: 'OPEN_SCHEDULE', destinationId }
+      );
+    },
+    [items, scheduleOpenId]
+  );
 
   const handleSaveDestinationDetails = (payload: DestinationModalSubmitInput) => {
     dispatch({ type: 'SET_ERROR', message: null });
@@ -583,8 +630,9 @@ export function DestinationList({
                     {index + 1}
                   </div>
                 )}
-                <div className="flex-1">
+                <div className="flex-1 space-y-3">
                   <DestinationCard
+                    activityCount={destination.activities.length}
                     destination={destination}
                     destinations={items}
                     expanded={Boolean(expandedCards[destination.destination_id])}
@@ -593,11 +641,22 @@ export function DestinationList({
                     locale={locale}
                     onDelete={handleRequestDeleteDestination}
                     onEdit={handleOpenModal}
+                    onOpenSchedule={handleOpenSchedule}
                     onToggle={handleToggleCard}
                     setOpenMenuId={handleSetOpenMenuId}
                     startDate={startDate}
                     travelDays={travelDays ?? 0}
                   />
+                  {scheduleOpenId === destination.destination_id ? (
+                    <DayPlanner
+                      activities={destination.activities}
+                      destinationId={destination.destination_id}
+                      duration={destination.duration}
+                      locale={locale}
+                      startDate={getDestinationDates(startDate, items, index, travelDays ?? 0).start}
+                      tripId={tripId}
+                    />
+                  ) : null}
                 </div>
               </div>
             </Fragment>

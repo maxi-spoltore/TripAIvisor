@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { useTranslations } from 'next-intl';
 import {
+  CalendarDays,
   ChevronDown,
   DollarSign,
   Edit2,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 import { formatDate, getDestinationDates } from '@/lib/utils/dates';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import type { Accommodation, DestinationWithRelations, Transport, TransportType } from '@/types/database';
 
 type DestinationCardProps = {
@@ -23,9 +25,11 @@ type DestinationCardProps = {
   locale: string;
   startDate: string | null;
   travelDays?: number;
+  activityCount: number;
   expanded: boolean;
   isMenuOpen: boolean;
   onToggle: (destinationId: number) => void;
+  onOpenSchedule: (destinationId: number) => void;
   onEdit: (destinationId: number) => void;
   onDelete: (destinationId: number) => void;
   setOpenMenuId: (destinationId: number | null) => void;
@@ -184,14 +188,17 @@ export const DestinationCard = memo(function DestinationCard({
   locale,
   startDate,
   travelDays = 0,
+  activityCount,
   expanded,
   isMenuOpen,
   onToggle,
+  onOpenSchedule,
   onEdit,
   onDelete,
   setOpenMenuId
 }: DestinationCardProps) {
   const tAccommodation = useTranslations('accommodation');
+  const tActivities = useTranslations('activities');
   const tCommon = useTranslations('common');
   const tDestinations = useTranslations('destinations');
   const tTransport = useTranslations('transport');
@@ -206,6 +213,8 @@ export const DestinationCard = memo(function DestinationCard({
 
   const hasTransport = hasTransportContent(destination.transport);
   const hasAccommodation = !destination.is_stopover && hasAccommodationContent(destination.accommodation);
+  const hasActivities = activityCount > 0;
+  const canOpenSchedule = !destination.is_stopover && destination.duration > 0;
   const TransportIcon = getTransportIconByType(destination.transport?.transport_type);
 
   const transportDetails = getTransportDetails(destination.transport, tTransport);
@@ -236,6 +245,7 @@ export const DestinationCard = memo(function DestinationCard({
               </h3>
               {hasTransport ? <TransportIcon aria-hidden="true" className="h-4 w-4 text-route" /> : null}
               {hasAccommodation ? <Hotel aria-hidden="true" className="h-4 w-4 text-brand-accent" /> : null}
+              {hasActivities ? <CalendarDays aria-hidden="true" className="h-4 w-4 text-brand-primary" /> : null}
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-body-sm text-foreground-secondary">
@@ -260,56 +270,77 @@ export const DestinationCard = memo(function DestinationCard({
             </div>
           </div>
 
-          <div className="destination-action-menu relative">
-            <button
-              aria-label={actionsLabel}
-              aria-controls={isMenuOpen ? menuId : undefined}
-              aria-expanded={isMenuOpen}
-              aria-haspopup="menu"
-              className="rounded-md p-2 text-foreground-muted transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
-              onClick={(event) => {
-                event.stopPropagation();
-                setOpenMenuId(isMenuOpen ? null : cardId);
-              }}
-              type="button"
-            >
-              <MoreVertical aria-hidden="true" className="h-4 w-4" />
-            </button>
-
-            {isMenuOpen ? (
-              <div
-                className="absolute right-0 top-full z-10 mt-1 min-w-[10rem] animate-fade-in rounded-lg border border-border bg-elevated py-1 shadow-floating"
-                id={menuId}
-                role="menu"
+          <div className="destination-action-menu flex items-center gap-1">
+            {canOpenSchedule ? (
+              <button
+                aria-label={`${tActivities('schedule')} (${tActivities('activitiesCount', { count: activityCount })})`}
+                className="inline-flex items-center gap-1 rounded-md p-2 text-foreground-muted transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onOpenSchedule(cardId);
+                }}
+                type="button"
               >
-                <button
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm font-medium text-foreground-secondary transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setOpenMenuId(null);
-                    onEdit(cardId);
-                  }}
-                  role="menuitem"
-                  type="button"
+                <CalendarDays aria-hidden="true" className="h-4 w-4" />
+                {hasActivities ? (
+                  <Badge className="h-5 min-w-5 px-1.5 text-[11px]" variant="secondary">
+                    {activityCount}
+                  </Badge>
+                ) : null}
+              </button>
+            ) : null}
+
+            <div className="relative">
+              <button
+                aria-label={actionsLabel}
+                aria-controls={isMenuOpen ? menuId : undefined}
+                aria-expanded={isMenuOpen}
+                aria-haspopup="menu"
+                className="rounded-md p-2 text-foreground-muted transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setOpenMenuId(isMenuOpen ? null : cardId);
+                }}
+                type="button"
+              >
+                <MoreVertical aria-hidden="true" className="h-4 w-4" />
+              </button>
+
+              {isMenuOpen ? (
+                <div
+                  className="absolute right-0 top-full z-10 mt-1 min-w-[10rem] animate-fade-in rounded-lg border border-border bg-elevated py-1 shadow-floating"
+                  id={menuId}
+                  role="menu"
+                >
+                  <button
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm font-medium text-foreground-secondary transition-colors duration-fast ease-standard hover:bg-subtle hover:text-foreground-primary"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setOpenMenuId(null);
+                      onEdit(cardId);
+                    }}
+                    role="menuitem"
+                    type="button"
                   >
                     <Edit2 aria-hidden="true" className="h-4 w-4" />
-                  {tCommon('edit')}
-                </button>
-                <button
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm font-medium text-danger transition-colors duration-fast ease-standard hover:bg-danger/10"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setOpenMenuId(null);
-                    onDelete(cardId);
-                  }}
-                  role="menuitem"
-                  type="button"
-                >
-                  <Trash2 aria-hidden="true" className="h-4 w-4" />
-                  {tCommon('delete')}
-                </button>
-              </div>
-            ) : null}
+                    {tCommon('edit')}
+                  </button>
+                  <button
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm font-medium text-danger transition-colors duration-fast ease-standard hover:bg-danger/10"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setOpenMenuId(null);
+                      onDelete(cardId);
+                    }}
+                    role="menuitem"
+                    type="button"
+                  >
+                    <Trash2 aria-hidden="true" className="h-4 w-4" />
+                    {tCommon('delete')}
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 

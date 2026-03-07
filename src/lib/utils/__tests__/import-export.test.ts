@@ -39,12 +39,29 @@ describe('Import/export utilities', () => {
           city: 'Madrid',
           duration: 5,
           position: 0,
+          is_stopover: false,
           notes: 'Museum day',
           budget: 800,
           created_at: '2026-02-03T00:00:00.000Z',
           updated_at: '2026-02-03T00:00:00.000Z',
           transport: null,
-          accommodation: null
+          accommodation: null,
+          activities: [
+            {
+              activity_id: 5,
+              destination_id: 99,
+              category: 'tour',
+              name: 'Prado Museum',
+              day_number: 2,
+              start_time: '10:00:00',
+              end_time: '12:00:00',
+              position: 0,
+              notes: 'Buy tickets in advance',
+              details: { venue: 'Museo del Prado' },
+              created_at: '2026-02-03T00:00:00.000Z',
+              updated_at: '2026-02-03T00:00:00.000Z'
+            }
+          ]
         }
       ]
     };
@@ -58,9 +75,20 @@ describe('Import/export utilities', () => {
     expect(exported.destinations[0].id).toBe('99');
     expect(exported.destinations[0].city).toBe('Madrid');
     expect(exported.destinations[0].notes).toBe('Museum day');
+    expect(exported.destinations[0].activities).toEqual([
+      {
+        category: 'tour',
+        name: 'Prado Museum',
+        dayNumber: 2,
+        startTime: '10:00:00',
+        endTime: '12:00:00',
+        notes: 'Buy tickets in advance',
+        details: { venue: 'Museo del Prado' }
+      }
+    ]);
   });
 
-  it('accepts prototype localStorage import data', () => {
+  it('accepts prototype localStorage import data without activities', () => {
     const data = {
       title: 'Mi Viaje',
       startDate: '2026-03-01',
@@ -86,6 +114,37 @@ describe('Import/export utilities', () => {
         city: 'Buenos Aires',
         transport: {}
       }
+    };
+
+    expect(validateImportData(data)).toBe(true);
+  });
+
+  it('accepts import data with activities', () => {
+    const data = {
+      title: 'Mi Viaje',
+      startDate: '2026-03-01',
+      destinations: [
+        {
+          id: 'dest-1',
+          city: 'Lima',
+          duration: 3,
+          transport: {},
+          accommodation: {},
+          notes: '',
+          budget: null,
+          activities: [
+            {
+              category: 'meal',
+              name: 'Dinner',
+              dayNumber: 1,
+              startTime: '20:00:00',
+              endTime: null,
+              notes: null,
+              details: { restaurant_name: 'Central' }
+            }
+          ]
+        }
+      ]
     };
 
     expect(validateImportData(data)).toBe(true);

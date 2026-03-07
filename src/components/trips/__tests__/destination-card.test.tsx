@@ -11,6 +11,7 @@ const mockDestination: DestinationWithRelations = {
   city: 'Madrid',
   duration: 5,
   position: 0,
+  is_stopover: false,
   notes: null,
   budget: null,
   created_at: '2026-02-03T00:00:00.000Z',
@@ -27,6 +28,8 @@ const mockDestination: DestinationWithRelations = {
     booking_number: null,
     booking_code: null,
     departure_time: null,
+    arrival_time: null,
+    travel_days: 0,
     created_at: '2026-02-03T00:00:00.000Z',
     updated_at: '2026-02-03T00:00:00.000Z'
   },
@@ -41,22 +44,25 @@ const mockDestination: DestinationWithRelations = {
     address: null,
     created_at: '2026-02-03T00:00:00.000Z',
     updated_at: '2026-02-03T00:00:00.000Z'
-  }
+  },
+  activities: []
 };
 
 describe('DestinationCard', () => {
   it('displays city name', () => {
     render(
       <DestinationCard
+        activityCount={0}
         destination={mockDestination}
         destinations={[mockDestination]}
         expanded={false}
+        isMenuOpen={false}
         index={0}
         locale="es"
         onDelete={noop}
         onEdit={noop}
+        onOpenSchedule={noop}
         onToggle={noop}
-        openMenuId={null}
         setOpenMenuId={noop}
         startDate={null}
       />
@@ -68,15 +74,17 @@ describe('DestinationCard', () => {
   it('displays duration', () => {
     render(
       <DestinationCard
+        activityCount={0}
         destination={mockDestination}
         destinations={[mockDestination]}
         expanded={false}
+        isMenuOpen={false}
         index={0}
         locale="es"
         onDelete={noop}
         onEdit={noop}
+        onOpenSchedule={noop}
         onToggle={noop}
-        openMenuId={null}
         setOpenMenuId={noop}
         startDate={null}
       />
@@ -85,23 +93,25 @@ describe('DestinationCard', () => {
     expect(screen.getByText(/5 días/i)).toBeInTheDocument();
   });
 
-  it('shows transport icon when transport exists', () => {
+  it('shows transport preview when transport exists', () => {
     render(
       <DestinationCard
+        activityCount={0}
         destination={mockDestination}
         destinations={[mockDestination]}
         expanded={false}
+        isMenuOpen={false}
         index={0}
         locale="es"
         onDelete={noop}
         onEdit={noop}
+        onOpenSchedule={noop}
         onToggle={noop}
-        openMenuId={null}
         setOpenMenuId={noop}
         startDate={null}
       />
     );
 
-    expect(screen.getByLabelText('transport-icon')).toBeInTheDocument();
+    expect(screen.getByText('Iberia')).toBeInTheDocument();
   });
 });

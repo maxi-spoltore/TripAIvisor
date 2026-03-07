@@ -1,7 +1,8 @@
 import { Calendar, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { formatDate, getDestinationDates, getTotalDays } from '@/lib/utils/dates';
-import type { DestinationWithRelations, TripWithRelations } from '@/types/database';
+import type { Activity, DestinationWithRelations, TripWithRelations } from '@/types/database';
+import { ACTIVITY_CATEGORY_CONFIG, formatActivityTime } from './activity-config';
 
 type TripViewOnlyProps = {
   locale: string;
@@ -30,10 +31,42 @@ function formatDateRange(locale: string, startDate: string | null, destinations:
   return `${startLabel} - ${endLabel}`;
 }
 
+function sortActivitiesByDayAndTime(activities: Activity[]): Activity[] {
+  return [...activities].sort((a, b) => {
+    if (a.day_number !== b.day_number) {
+      return a.day_number - b.day_number;
+    }
+
+    if (a.start_time && b.start_time) {
+      return a.start_time.localeCompare(b.start_time);
+    }
+
+    if (a.start_time || b.start_time) {
+      return a.start_time ? -1 : 1;
+    }
+
+    return a.position - b.position;
+  });
+}
+
+function getActivityTimeLabel(activity: Activity): string | null {
+  if (!activity.start_time) {
+    return null;
+  }
+
+  const start = formatActivityTime(activity.start_time);
+  if (!activity.end_time) {
+    return start;
+  }
+
+  return `${start} - ${formatActivityTime(activity.end_time)}`;
+}
+
 export function TripViewOnly({ locale, trip }: TripViewOnlyProps) {
   const tDestinations = useTranslations('destinations');
   const tShare = useTranslations('share');
   const tTrips = useTranslations('trips');
+  const tActivities = useTranslations('activities');
   const readOnlyBanner = tShare('readOnlyBanner');
   const dateRange = formatDateRange(locale, trip.start_date, trip.destinations);
   const localeTag = locale === 'en' ? 'en-US' : 'es-ES';
@@ -68,6 +101,16 @@ export function TripViewOnly({ locale, trip }: TripViewOnlyProps) {
             const dates = getDestinationDates(trip.start_date, trip.destinations, index);
             const destinationRange =
               dates.start && dates.end ? `${formatDate(dates.start, localeTag)} - ${formatDate(dates.end, localeTag)}` : null;
+            const groupedActivities = Array.from(
+              sortActivitiesByDayAndTime(
+                destination.is_stopover || destination.duration < 1 ? [] : destination.activities
+              ).reduce((groups, activity) => {
+                const dayActivities = groups.get(activity.day_number) ?? [];
+                dayActivities.push(activity);
+                groups.set(activity.day_number, dayActivities);
+                return groups;
+              }, new Map<number, Activity[]>())
+            );
 
             return (
               <div key={destination.destination_id} className="relative flex gap-4 pb-4">
@@ -88,6 +131,41 @@ export function TripViewOnly({ locale, trip }: TripViewOnlyProps) {
                     <p className="mt-2 text-sm text-foreground-secondary">
                       {tDestinations('budget')}: ${destination.budget}
                     </p>
+                  ) : null}
+                  {groupedActivities.length > 0 ? (
+                    <div className="mt-3 space-y-3 border-t border-border pt-3">
+                      <h4 className="text-sm font-semibold text-brand-primary">
+                        {tActivities('title')} ({destination.activities.length})
+                      </h4>
+                      {groupedActivities.map(([dayNumber, dayActivities]) => (
+                        <div key={`activity-day-${destination.destination_id}-${dayNumber}`} className="space-y-1.5">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+                            {tActivities('day', { number: dayNumber })}
+                          </p>
+                          <ul className="space-y-1">
+                            {dayActivities.map((activity) => {
+                              const CategoryIcon = ACTIVITY_CATEGORY_CONFIG[activity.category].icon;
+                              const timeLabel = getActivityTimeLabel(activity);
+
+                              return (
+                                <li
+                                  className="flex items-center justify-between gap-3 rounded-md border border-border bg-elevated px-2.5 py-2 text-sm"
+                                  key={activity.activity_id}
+                                >
+                                  <span className="flex min-w-0 items-center gap-2">
+                                    <CategoryIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand-primary" />
+                                    <span className="truncate text-foreground-primary">{activity.name}</span>
+                                  </span>
+                                  {timeLabel ? (
+                                    <span className="whitespace-nowrap text-xs text-foreground-secondary">{timeLabel}</span>
+                                  ) : null}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
                   ) : null}
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import type { Transport, TransportType, TripWithRelations } from '@/types/database';
+import type { ActivityCategory, Transport, TransportType, TripWithRelations } from '@/types/database';
 
 export interface ExportedTransport {
   type?: TransportType;
@@ -17,6 +17,16 @@ export interface ExportedAccommodation {
   bookingLink?: string | null;
   bookingCode?: string | null;
   address?: string | null;
+}
+
+export interface ExportedActivity {
+  category: ActivityCategory;
+  name: string;
+  dayNumber: number;
+  startTime: string | null;
+  endTime: string | null;
+  notes: string | null;
+  details: Record<string, unknown>;
 }
 
 export interface ExportedDeparture {
@@ -40,6 +50,7 @@ export interface ExportedDestination {
   accommodation: ExportedAccommodation;
   notes: string;
   budget: number | null;
+  activities?: ExportedActivity[];
 }
 
 export interface ExportedTrip {
@@ -90,7 +101,16 @@ export function exportTrip(trip: TripWithRelations): ExportedTrip {
           }
         : {},
       notes: destination.notes ?? '',
-      budget: destination.budget
+      budget: destination.budget,
+      activities: destination.activities.map((activity) => ({
+        category: activity.category,
+        name: activity.name,
+        dayNumber: activity.day_number,
+        startTime: activity.start_time,
+        endTime: activity.end_time,
+        notes: activity.notes,
+        details: activity.details
+      }))
     })),
     return: trip.return_transport
       ? {
@@ -112,6 +132,10 @@ function isStringOrNull(value: unknown): value is string | null {
 
 function isTransportType(value: unknown): value is TransportType {
   return value === 'plane' || value === 'train' || value === 'bus';
+}
+
+function isActivityCategory(value: unknown): value is ActivityCategory {
+  return value === 'meal' || value === 'tour' || value === 'ticketed' || value === 'general';
 }
 
 function isExportedTransport(value: unknown): value is ExportedTransport {
@@ -152,6 +176,25 @@ function isExportedAccommodation(value: unknown): value is ExportedAccommodation
   return optionalFields.every((field) => value[field] === undefined || isStringOrNull(value[field]));
 }
 
+function isExportedActivity(value: unknown): value is ExportedActivity {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  return (
+    isActivityCategory(value.category) &&
+    typeof value.name === 'string' &&
+    value.name.trim().length > 0 &&
+    typeof value.dayNumber === 'number' &&
+    Number.isInteger(value.dayNumber) &&
+    value.dayNumber >= 1 &&
+    isStringOrNull(value.startTime) &&
+    isStringOrNull(value.endTime) &&
+    isStringOrNull(value.notes) &&
+    isObject(value.details)
+  );
+}
+
 function isExportedDestination(value: unknown): value is ExportedDestination {
   if (!isObject(value)) {
     return false;
@@ -179,6 +222,11 @@ function isExportedDestination(value: unknown): value is ExportedDestination {
 
   const transport = value.transport ?? {};
   const accommodation = value.accommodation ?? {};
+  const activities = value.activities ?? [];
+
+  if (!Array.isArray(activities) || !activities.every(isExportedActivity)) {
+    return false;
+  }
 
   return isExportedTransport(transport) && isExportedAccommodation(accommodation);
 }
