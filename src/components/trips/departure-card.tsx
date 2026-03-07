@@ -225,7 +225,7 @@ export function DepartureCard({
 
   return (
     <>
-      <div className="rounded-xl border border-border bg-gradient-to-r from-subtle to-surface shadow-sm">
+      <div className="rounded-xl border border-border bg-surface shadow-card">
         <div className="p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
@@ -244,7 +244,7 @@ export function DepartureCard({
           </div>
 
           {hasTransport ? (
-            <div className="mt-4 rounded-lg bg-elevated p-3">
+            <div className="mt-4 border-t border-border pt-4">
               {hasLegsItinerary ? (
                 <>
                   <div className="flex items-center justify-between gap-2">

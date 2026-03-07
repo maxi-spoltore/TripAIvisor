@@ -159,30 +159,47 @@ export function TripHeader({ locale, tripId, title, startDate, endDate, totalDay
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
-      <div className="h-1.5 bg-gradient-to-r from-brand-route via-brand-primary to-brand-accent" />
-
       <div className="space-y-5 p-4 sm:space-y-6 sm:p-6">
-        <div className="group relative space-y-2">
-          <p className="text-label-sm uppercase tracking-[0.03em] text-foreground-muted">
-            {tTrips('summary')}
-          </p>
-          <Input
-            className="h-auto border-transparent bg-transparent px-0 py-0 font-display text-display-md font-bold leading-tight text-foreground-primary shadow-none focus-visible:border-transparent focus-visible:ring-0"
-            disabled={isPending}
-            onBlur={saveTitle}
-            onChange={(event) => setEditingTitle(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.currentTarget.blur();
-              }
-            }}
-            placeholder={tTrips('defaultTitle')}
-            value={editingTitle}
-          />
+        <div className="group relative flex items-start gap-3">
+          <div className="min-w-0 flex-1 space-y-2">
+            <Input
+              className="h-auto border-transparent bg-transparent px-0 py-0 font-display text-display-md font-bold leading-tight text-foreground-primary shadow-none focus-visible:border-transparent focus-visible:ring-0"
+              disabled={isPending}
+              onBlur={saveTitle}
+              onChange={(event) => setEditingTitle(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.currentTarget.blur();
+                }
+              }}
+              placeholder={tTrips('defaultTitle')}
+              value={editingTitle}
+            />
+          </div>
+          <div className="flex shrink-0 gap-1">
+            <Button
+              aria-label={tTrips('export')}
+              onClick={handleExportTrip}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              <Download aria-hidden="true" className="h-4 w-4" />
+            </Button>
+            <Button
+              aria-label={tShare('open')}
+              onClick={() => setIsShareModalOpen(true)}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              <Share2 aria-hidden="true" className="h-4 w-4" />
+            </Button>
+          </div>
           <div className="absolute bottom-0 left-0 right-0 h-px bg-brand-primary/30 opacity-0 transition-opacity duration-fast ease-standard group-hover:opacity-100" />
         </div>
 
-        <div className="space-y-3 rounded-lg border border-border bg-elevated p-3 sm:p-4">
+        <div className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-3 space-x-2">
               <label className="text-label-md text-foreground-muted" htmlFor="trip-start-date">
@@ -220,17 +237,6 @@ export function TripHeader({ locale, tripId, title, startDate, endDate, totalDay
           ) : null}
 
           {dateError ? <p className="text-body-sm text-danger">{dateError}</p> : null}
-        </div>
-
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Button className="w-full sm:w-auto" onClick={handleExportTrip} size="sm" type="button" variant="outline">
-            <Download aria-hidden="true" className="mr-2 h-4 w-4" />
-            {tTrips('export')}
-          </Button>
-          <Button className="w-full sm:w-auto" onClick={() => setIsShareModalOpen(true)} size="sm" type="button" variant="outline">
-            <Share2 aria-hidden="true" className="mr-2 h-4 w-4" />
-            {tShare('open')}
-          </Button>
         </div>
       </div>
 

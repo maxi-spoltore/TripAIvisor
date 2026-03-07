@@ -315,25 +315,19 @@ export const DestinationCard = memo(function DestinationCard({
         </div>
 
         {!expanded ? (
-          <div className="space-y-2 text-body-sm text-foreground-secondary">
+          <div className="space-y-1.5 text-body-sm text-foreground-secondary">
             {transportPreview.length > 0 ? (
-              <div className="space-y-1 rounded-lg border border-border bg-elevated p-3">
-                {transportPreview.map((field) => (
-                  <p key={`transport-${field.label}`}>
-                    <span className="text-foreground-muted">{field.label}:</span> {field.value}
-                  </p>
-                ))}
-              </div>
+              <p className="flex items-center gap-2">
+                <TransportIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-route" />
+                <span>{transportPreview.map((field) => field.value).join(' · ')}</span>
+              </p>
             ) : null}
 
             {accommodationPreview.length > 0 && !destination.is_stopover ? (
-              <div className="space-y-1 rounded-lg border border-border bg-elevated p-3">
-                {accommodationPreview.map((field) => (
-                  <p key={`accommodation-${field.label}`}>
-                    <span className="text-foreground-muted">{field.label}:</span> {field.value}
-                  </p>
-                ))}
-              </div>
+              <p className="flex items-center gap-2">
+                <Hotel aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand-accent" />
+                <span>{accommodationPreview.map((field) => field.value).join(' · ')}</span>
+              </p>
             ) : null}
           </div>
         ) : null}
@@ -354,7 +348,7 @@ export const DestinationCard = memo(function DestinationCard({
         {expanded ? (
           <div className="space-y-3">
             {transportDetails.length > 0 ? (
-              <div className="rounded-lg border border-border bg-elevated p-3">
+              <div className="border-t border-border pt-3">
                 <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-brand-primary">
                   <TransportIcon aria-hidden="true" className="h-4 w-4" />
                   {tTransport('title')}
@@ -370,7 +364,7 @@ export const DestinationCard = memo(function DestinationCard({
             ) : null}
 
             {accommodationDetails.length > 0 && !destination.is_stopover ? (
-              <div className="rounded-lg border border-border bg-elevated p-3">
+              <div className="border-t border-border pt-3">
                 <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-brand-accent">
                   <Hotel aria-hidden="true" className="h-4 w-4" />
                   {tAccommodation('title')}
@@ -386,7 +380,7 @@ export const DestinationCard = memo(function DestinationCard({
             ) : null}
 
             {destination.notes ? (
-              <div className="rounded-lg border border-border bg-elevated p-3">
+              <div className="border-t border-border pt-3">
                 <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-foreground-primary">
                   <StickyNote aria-hidden="true" className="h-4 w-4" />
                   {tDestinations('notes')}
@@ -396,7 +390,7 @@ export const DestinationCard = memo(function DestinationCard({
             ) : null}
 
             {destination.budget !== null ? (
-              <div className="rounded-lg border border-border bg-elevated p-3">
+              <div className="border-t border-border pt-3">
                 <h4 className="mb-2 flex items-center gap-2 text-body-sm font-semibold text-success">
                   <DollarSign aria-hidden="true" className="h-4 w-4" />
                   {tDestinations('budget')}

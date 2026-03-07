@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown, Globe, LogOut, Monitor, Moon, Settings, Sun } from 'lucide-react';
+import { Check, ChevronDown, Globe, LogOut, Monitor, Moon, Sun } from 'lucide-react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
@@ -263,12 +263,6 @@ export function UserMenu({ userName, userImage, locale }: UserMenuProps) {
                 );
               })}
             </div>
-          </div>
-
-          <div className="flex cursor-not-allowed items-center gap-2 px-4 py-2 text-body-sm text-foreground-muted">
-            <Settings aria-hidden="true" className="h-4 w-4" />
-            <span>{tAuth('settings')}</span>
-            <span className="text-label-sm">({tAuth('comingSoon')})</span>
           </div>
 
           <div className="mt-2 border-t border-border" />
