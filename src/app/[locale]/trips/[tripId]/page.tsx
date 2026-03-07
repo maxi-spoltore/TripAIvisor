@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { DestinationList } from '@/components/trips/destination-list';
+import { TripDetailHint } from '@/components/trips/trip-detail-hint';
 import { TripCityBanner } from '@/components/trips/trip-city-banner';
 import { TripHeader } from '@/components/trips/trip-header';
 import { ViewTransitionLink } from '@/components/ui/view-transition-link';
@@ -74,6 +75,8 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
         <ArrowLeft aria-hidden="true" className="h-4 w-4" />
         {tTrips('backToTrips')}
       </ViewTransitionLink>
+
+      <TripDetailHint />
 
       <TripHeader
         endDate={trip.end_date}

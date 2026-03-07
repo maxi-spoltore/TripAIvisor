@@ -495,3 +495,51 @@ Replace the hardcoded locale check with the i18n key:
 - [ ] Spanish locale shows the equivalent translated string.
 - [ ] No hardcoded locale check (`locale === 'es'`) remains in the empty state.
 - [ ] The "Add Destination" form still appears below the empty state message.
+
+### Task 4 Implementation Summary (Completed March 7, 2026)
+
+**Scope implemented**
+
+- Added new client component `src/components/trips/trip-detail-hint.tsx` with:
+  - one-time visibility controlled by `localStorage` key `tripaivisor_seen_trip_detail`
+  - onboarding translations via `useTranslations('onboarding')`
+  - dismiss action on `X` button that persists the seen flag
+  - ordered 3-step instructional list (`tripDetailStep1`, `tripDetailStep2`, `tripDetailStep3`)
+- Wired the hint card into `src/app/[locale]/trips/[tripId]/page.tsx`:
+  - imported `TripDetailHint`
+  - rendered it directly between the back link and `TripHeader`, as planned
+- Kept implementation minimal and isolated:
+  - no changes to trip data loading, auth checks, header/banner logic, destination logic, or server actions
+  - no additional global state, context, or reducers added
+
+**Behavior delivered**
+
+- On first visit to any trip detail page in the same browser profile, the card appears after hydration.
+- Clicking dismiss hides the card and stores the flag.
+- Subsequent visits to any trip detail page do not show the card until storage is cleared.
+- Copy resolves per current locale (`en`/`es`) through existing onboarding translation keys.
+
+### Task 5 Implementation Summary (Completed March 7, 2026)
+
+**Scope implemented**
+
+- Updated `src/components/trips/destination-list.tsx` empty-state copy:
+  - replaced `tDestinations('noDestinationsYet')` with `tDestinations('noDestinationsHint')`
+- Kept the empty-state structure unchanged:
+  - bordered hint paragraph remains in place
+  - `addDestinationForm(false)` still renders immediately below the message
+
+**Plan discrepancy identified and handled**
+
+- The task text referenced a hardcoded locale ternary (`locale === 'es' ? ... : ...`) at this location.
+- In the current codebase, that hardcoded ternary was already removed before this task; the component was already using `next-intl` (`tDestinations('noDestinationsYet')`).
+- Implemented the intended functional outcome (richer guidance copy) by switching to the new `noDestinationsHint` key only, without unrelated refactors.
+
+### Validation (Tasks 4 and 5)
+
+- Ran full production build: `npm run build`
+- Result: success (`next build` compiled, typechecked, and generated routes without errors).
+
+### Task 4 & 5 Outcome
+
+- Task 4 and Task 5 are fully implemented and validated.

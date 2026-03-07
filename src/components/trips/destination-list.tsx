@@ -516,7 +516,7 @@ export function DestinationList({
       {items.length === 0 ? (
         <>
           <p className="rounded-lg border border-dashed border-border-strong bg-surface p-4 text-body-sm text-foreground-secondary">
-            {tDestinations('noDestinationsYet')}
+            {tDestinations('noDestinationsHint')}
           </p>
           {addDestinationForm(false)}
         </>
