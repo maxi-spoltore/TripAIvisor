@@ -36,10 +36,11 @@
     "title": "Mis Viajes",
     "defaultTitle": "Mi Viaje",
     "newTrip": "Nuevo Viaje",
+    "newTripHint": "Dale un nombre a tu viaje y configura tu ciudad de salida. Despues agregaras destinos, transporte y alojamiento.",
     "import": "Importar viaje",
     "importing": "Importando...",
     "noTripsTitle": "Aún no tienes viajes",
-    "noTripsDescription": "Crea tu primer viaje para empezar",
+    "noTripsDescription": "Nombra tu viaje, configura tus ciudades, y empieza a agregar destinos.",
     "listDescription": "Organiza y ajusta tus viajes en un solo lugar.",
     "welcome": "Bienvenido, {name}",
     "totalTrips": "{count} viajes",
@@ -82,6 +83,7 @@
     "confirmDeleteDestination": "Este destino y todos sus detalles serán eliminados permanentemente.",
     "stopover": "Escala",
     "noDestinationsYet": "No hay destinos todavía.",
+    "noDestinationsHint": "Agrega tu primer destino abajo. Cada uno puede incluir detalles de transporte, alojamiento y notas.",
     "additional": "Adicionales",
     "notes": "Notas",
     "notesPlaceholder": "Lugares para visitar, recordatorios, etc.",
@@ -168,5 +170,17 @@
     "cityNameRequired": "Ingresa el nombre de una ciudad.",
     "durationInvalid": "La duración debe ser de al menos 1 día. Usa 0 para escalas.",
     "budgetInvalid": "Ingresa un número válido para el presupuesto."
+  },
+  "onboarding": {
+    "welcomeTitle": "Planifica tu proxima aventura",
+    "welcomeDescription": "TripAIvisor te ayuda a organizar viajes con multiples destinos con todos los detalles en un solo lugar.",
+    "featureDestinations": "Agrega destinos y arma tu ruta",
+    "featureDates": "Organiza fechas, transporte y alojamiento",
+    "featureShare": "Exporta o comparte tu itinerario con otros",
+    "createFirstTrip": "Crea tu primer viaje",
+    "tripDetailStep1": "Configura las fechas de tu viaje con los selectores de fecha",
+    "tripDetailStep2": "Agrega destinos abajo - cada uno puede incluir transporte y alojamiento",
+    "tripDetailStep3": "Comparte o exporta tu viaje cuando estes listo",
+    "gotIt": "Entendido"
   }
 }

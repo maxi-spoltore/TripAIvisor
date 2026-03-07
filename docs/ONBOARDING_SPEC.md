@@ -93,6 +93,44 @@ Add under `"destinations"`:
 - [ ] `npm run build` passes with no missing translation key warnings.
 - [ ] Both `en.json` and `es.json` are valid JSON.
 
+### Task 1 Implementation Summary (Completed)
+
+**Scope implemented**
+
+- Updated `src/messages/en.json`:
+  - Added `trips.newTripHint`.
+  - Replaced `trips.noTripsDescription` with onboarding-focused copy.
+  - Added `destinations.noDestinationsHint`.
+  - Added new top-level `onboarding` namespace with:
+    - `welcomeTitle`
+    - `welcomeDescription`
+    - `featureDestinations`
+    - `featureDates`
+    - `featureShare`
+    - `createFirstTrip`
+    - `tripDetailStep1`
+    - `tripDetailStep2`
+    - `tripDetailStep3`
+    - `gotIt`
+- Updated `src/messages/es.json` with the same structural additions and Spanish translations for all new keys.
+- Kept changes limited to Task 1 translation files (no UI/component logic changes).
+
+**Validation performed**
+
+- JSON syntax validation:
+  - `node -e "JSON.parse(require('fs').readFileSync('src/messages/en.json','utf8')); JSON.parse(require('fs').readFileSync('src/messages/es.json','utf8')); console.log('json-ok')"`
+  - Result: `json-ok`.
+- Build validation:
+  - `npm run build` was executed and completed successfully after clearing stale build state (transient `PageNotFoundError` for `/[locale]/share/[shareId]` was resolved by isolating stale `.next` artifacts and restarting build verification).
+
+**Notes**
+
+- `tripDetailStep2` uses ASCII separator (`" - "`) instead of em dash for repository consistency.
+
+**Task 1 outcome**
+
+- Task 1 localization keys and copy updates are implemented and validated.
+
 ---
 
 ## Task 2: Dashboard — First-Time vs Returning User

@@ -36,10 +36,11 @@
     "title": "My Trips",
     "defaultTitle": "My Trip",
     "newTrip": "New Trip",
+    "newTripHint": "Give your trip a name and set your departure city. You'll add destinations, transport, and accommodation next.",
     "import": "Import trip",
     "importing": "Importing...",
     "noTripsTitle": "No trips yet",
-    "noTripsDescription": "Create your first trip to get started",
+    "noTripsDescription": "Name your trip, set your cities, then start adding destinations.",
     "listDescription": "Organize and fine-tune your trips in one place.",
     "welcome": "Welcome, {name}",
     "totalTrips": "{count} trips",
@@ -82,6 +83,7 @@
     "confirmDeleteDestination": "This destination and all its details will be permanently deleted.",
     "stopover": "Stopover",
     "noDestinationsYet": "No destinations yet.",
+    "noDestinationsHint": "Add your first destination below. Each one can include transport details, accommodation info, and notes.",
     "additional": "Additional",
     "notes": "Notes",
     "notesPlaceholder": "Places to visit, reminders, etc.",
@@ -168,5 +170,17 @@
     "cityNameRequired": "Enter a city name.",
     "durationInvalid": "Duration must be at least 1 day. Use 0 for stopovers.",
     "budgetInvalid": "Enter a valid number for the budget."
+  },
+  "onboarding": {
+    "welcomeTitle": "Plan your next adventure",
+    "welcomeDescription": "TripAIvisor helps you organize multi-city trips with all the details in one place.",
+    "featureDestinations": "Add destinations and build your route",
+    "featureDates": "Track dates, transport, and accommodation",
+    "featureShare": "Export or share your itinerary with others",
+    "createFirstTrip": "Create your first trip",
+    "tripDetailStep1": "Set your trip dates using the date pickers above",
+    "tripDetailStep2": "Add destinations below - each can include transport and accommodation",
+    "tripDetailStep3": "Share or export your trip when you're ready",
+    "gotIt": "Got it"
   }
 }
